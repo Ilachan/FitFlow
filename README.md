@@ -1,6 +1,6 @@
 # softeng
 
-A full-stack web application built with [Frontend Framework] and [Backend Framework]. This project demonstrates [brief description of the purpose or functionality, e.g., task management, e-commerce, social platform, etc.].
+A full-stack web application built with [Frontend Framework] and [Backend Framework]. This project demonstrates a fitness class registration website. The website presents different types of fitness classes, and allows users to register/cancel classes. Other functions like setting a reminder to register specific class. 
 
 ---
 
