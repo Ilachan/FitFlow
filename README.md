@@ -1,10 +1,8 @@
-Project name
-Project description
-Members
+
 # softeng
-Project Name: Semicolon Squad
-Project description: A full-stack web application built with [Frontend Framework] and [Backend Framework]. This project demonstrates a fitness class registration website. The website presents different types of fitness classes, and allows users to register/cancel classes. Other functions like setting a reminder to register specific class. 
-Members:
+- Project Name: Semicolon Squad
+- Project description: A full-stack web application built with [Frontend Framework] and [Backend Framework]. This project demonstrates a fitness class registration website. The website presents different types of fitness classes, and allows users to register/cancel classes. Other functions like setting a reminder to register specific class. 
+- Members:
   Frontend: Ila Adhikari, Forrest Yan Sun;
   Backend: Yingzhu Chen, Qing Li
 
