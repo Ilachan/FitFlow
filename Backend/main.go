@@ -2,11 +2,11 @@ package main
 
 import (
 	"log" // [Fixed] Added missing import for log.Printf
-	
+
 	// Ensure these match your go.mod module name
 	"my-course-backend/db"
 	"my-course-backend/model"
-	"my-course-backend/routes" 
+	"my-course-backend/routes"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 	db.InitDB()
 
 	// 2. Auto Migrate Table Structures
-	db.DB.AutoMigrate(&model.Role{}, &model.Student{})
+	db.DB.AutoMigrate(&model.Role{}, &model.Student{}, &model.Course{}, &model.StudentEnrollment{})
 
 	// 3. Seed Initial Data
 	seedRoles()

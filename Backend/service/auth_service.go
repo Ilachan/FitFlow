@@ -70,9 +70,9 @@ func LoginUser(input model.LoginInput) (string, error) {
 	// 3. Generate JWT Token
 	// Create a new token object, specifying the signing method (HS256) and the claims (payload).
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":      student.ID,     // User ID
-		"email":   student.Email,  // User Email
-		"role_id": student.RoleID, // Role ID (used for frontend permission checks)
+		"id":      student.ID,                            // User ID
+		"email":   student.Email,                         // User Email
+		"role_id": student.RoleID,                        // Role ID (used for frontend permission checks)
 		"exp":     time.Now().Add(time.Hour * 24).Unix(), // Expiration time: 24 hours from now
 	})
 
@@ -84,6 +84,33 @@ func LoginUser(input model.LoginInput) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+// GetStudentIDFromToken extracts the student ID from a JWT token string.
+func GetStudentIDFromToken(tokenString string) (uint, error) {
+	claims := jwt.MapClaims{}
+	parsed, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+	if err != nil || !parsed.Valid {
+		return 0, errors.New("invalid token")
+	}
+
+	idValue, ok := claims["id"]
+	if !ok {
+		return 0, errors.New("invalid token")
+	}
+
+	switch typed := idValue.(type) {
+	case float64:
+		return uint(typed), nil
+	case int:
+		return uint(typed), nil
+	case uint:
+		return typed, nil
+	default:
+		return 0, errors.New("invalid token")
+	}
 }
 
 // RemoveUser handles the business logic for deleting a user.
