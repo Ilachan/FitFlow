@@ -28,13 +28,14 @@ func SetupRouter() *gin.Engine {
 	// Auth Route Group
 	// Prefix: /auth
 	authRoutes := r.Group("/auth")
-	{
-		// POST /auth/register
-		authRoutes.POST("/register", api.Register)
-		// POST /auth/login
-		authRoutes.POST("/login", api.Login)
-	}
-
+{
+    authRoutes.POST("/register", api.Register)
+    authRoutes.POST("/login", api.Login)
+    
+    // New Profile Endpoints
+    authRoutes.GET("/profile", api.GetProfile)
+    authRoutes.PUT("/profile", api.UpdateProfile)
+}
 	// User Route Group
 	// Prefix: /users
 	userRoutes := r.Group("/users")

@@ -20,6 +20,31 @@ type Student struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// StudentProfile represents the combined data from Student and student_info tables
+type StudentProfile struct {
+	Name        string `json:"name"`
+	Email       string `json:"email"` // Usually read-only in profile updates
+	AvatarURL   string `json:"avatar_url"`
+	DateOfBirth string `json:"date_of_birth"`
+	Gender      string `json:"gender"`
+	PhoneNumber string `json:"phone_number"`
+	Address     string `json:"address"`
+}
+
+// StudentInfo matches your SQL student_info table structure
+type StudentInfo struct {
+	ID          uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+	StudentID   uint   `gorm:"unique;not null" json:"student_id"`
+	DateOfBirth string `json:"date_of_birth"`
+	Gender      string `json:"gender"`
+	PhoneNumber string `json:"phone_number"`
+	Address     string `json:"address"`
+}
+
+func (StudentInfo) TableName() string {
+	return "student_info"
+}
+
 // TableName overrides the default table name to "Student".
 func (Student) TableName() string {
 	return "Student"

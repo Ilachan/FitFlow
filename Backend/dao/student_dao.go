@@ -4,6 +4,7 @@ import (
 	"errors"
 	"my-course-backend/db"
 	"my-course-backend/model"
+	"gorm.io/gorm"
 )
 
 // GetRoleByName retrieves the role ID based on the role name.
@@ -38,6 +39,49 @@ func GetStudentByEmail(email string) (*model.Student, error) {
 		return nil, err
 	}
 	return &student, nil
+}
+
+// GetProfileByID fetches combined data from Student and student_info
+func GetProfileByID(id uint) (*model.StudentProfile, error) {
+	var profile model.StudentProfile
+	// Join Student table with student_info table using student_id 
+	err := db.DB.Table("Student").
+		Select("Student.name, Student.email, Student.avatar_url, student_info.date_of_birth, student_info.gender, student_info.phone_number, student_info.address").
+		Joins("left join student_info on student_info.student_id = Student.id").
+		Where("Student.id = ?", id).
+		Scan(&profile).Error
+	return &profile, err
+}
+
+// UpdateProfile updates both tables in a single transaction
+func UpdateProfile(id uint, p model.StudentProfile) error {
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		// 1. Update Student table [cite: 7]
+		if err := tx.Model(&model.Student{}).Where("id = ?", id).Updates(map[string]interface{}{
+			"name":       p.Name,
+			"avatar_url": p.AvatarURL,
+		}).Error; err != nil {
+			return err
+		}
+
+		// 2. Update or Create student_info table 
+		var info model.StudentInfo
+		err := tx.Where("student_id = ?", id).First(&info).Error
+		
+		infoData := model.StudentInfo{
+			StudentID:   id,
+			DateOfBirth: p.DateOfBirth,
+			Gender:      p.Gender,
+			PhoneNumber: p.PhoneNumber,
+			Address:     p.Address,
+		}
+
+		if err != nil { // If record doesn't exist, create it
+			return tx.Create(&infoData).Error
+		}
+		// If exists, update it
+		return tx.Model(&info).Updates(infoData).Error
+	})
 }
 
 // DeleteStudentByID deletes a student record by their ID.

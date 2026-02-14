@@ -73,7 +73,8 @@ func LoginUser(input model.LoginInput) (string, error) {
 		"id":      student.ID,                            // User ID
 		"email":   student.Email,                         // User Email
 		"role_id": student.RoleID,                        // Role ID (used for frontend permission checks)
-		"exp":     time.Now().Add(time.Hour * 24).Unix(), // Expiration time: 24 hours from now
+		//"exp":     time.Now().Add(time.Hour * 24).Unix(), // Expiration time: 24 hours from now
+		"exp":     time.Now().Add(time.Second * 70).Unix(), // Expiration time: 24 hours from now
 	})
 
 	// 4. Sign the token
@@ -116,4 +117,12 @@ func GetStudentIDFromToken(tokenString string) (uint, error) {
 // RemoveUser handles the business logic for deleting a user.
 func RemoveUser(id uint) error {
 	return dao.DeleteStudentByID(id)
+}
+
+func GetUserProfile(id uint) (*model.StudentProfile, error) {
+	return dao.GetProfileByID(id)
+}
+
+func UpdateUserProfile(id uint, input model.StudentProfile) error {
+	return dao.UpdateProfile(id, input)
 }
