@@ -191,8 +191,7 @@ As a student, I want to see the classes I am enrolled in, so that I can manage m
 - [FE-35] Display the remaining spots for each class in the course listing UI.
 
 ## Didn't Completed User Stories (Sprint 1 - Removed)
-The following user stories were deprecated during Sprint 1 development. After user research and team discussions, we determined that these features do not align with current user needs or are lower priority.
-
+The following user stories were deprecated during Sprint 1 development. Based on Agile development principles and our subsequent team meetings, we determined that these features do not align with current user needs or are lower priority.
 ---
 
 ### ~~User Story X1 – Social Media Login Integration~~
