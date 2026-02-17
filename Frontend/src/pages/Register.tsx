@@ -3,15 +3,41 @@ import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import { Icons } from "../lib/icons";
+import { useAuthStore } from "../store/authStore";
 import BackgroundBlobs from "../components/ui/BackgroundBlobs";
+import toast from "react-hot-toast";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { login } = useAuthStore();
+
+  const handleRegister = () => {
+    // In a real app, you would make an API call to register here.
+    // fetch('/api/register', ...).then(res => res.json()).then(data => login(data.token))
+
+    // Mock registration + auto-login
+    const mockToken =
+      "mock-jwt-token-" + Math.random().toString(36).substring(7);
+    login(mockToken);
+
+    toast.success("Registration successful! Welcome to FitFlow.");
+
+    // Redirect to courses page after successful registration
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       <BackgroundBlobs />
       <Card className="w-full max-w-md p-8 relative z-10">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/courses")}
+          className="absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-600"
+        >
+          <Icons.ArrowLeft />
+        </Button>
+
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-linear-to-tr from-violet-600 to-indigo-600 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg shadow-indigo-500/30">
             <span className="text-3xl">💪</span>
@@ -41,10 +67,7 @@ const Register = () => {
             <Input type="password" placeholder="Password" />
           </div>
 
-          <Button
-            className="w-full py-3.5 text-lg"
-            onClick={() => navigate("/login")}
-          >
+          <Button className="w-full py-3.5 text-lg" onClick={handleRegister}>
             Create Account
           </Button>
         </div>

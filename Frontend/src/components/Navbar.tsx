@@ -1,32 +1,36 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import { Icons } from "../lib/icons";
 import Button from "./ui/Button";
 import { useAuthStore } from "../store/authStore";
+import toast from "react-hot-toast";
 
 const Navbar = () => {
-  const { logout } = useAuthStore();
+  const { isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
-    navigate("/login");
+    navigate("/");
+    setTimeout(() => {
+      logout();
+      toast.success("Successfully logged out!");
+    }, 100);
   };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-white/20 bg-white/70 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20 items-center">
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-linear-to-tr from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
               F
             </div>
             <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-violet-600 to-indigo-600">
               FitFlow
             </span>
-          </div>
+          </Link>
           <div className="flex items-center gap-2 bg-slate-100/50 p-1 rounded-xl">
             <NavLink
-              to="/dashboard/browse"
+              to="/courses"
               className={({ isActive }) =>
                 `px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                   isActive
@@ -38,7 +42,7 @@ const Navbar = () => {
               Browse
             </NavLink>
             <NavLink
-              to="/dashboard/my-schedule"
+              to="/my-schedule"
               className={({ isActive }) =>
                 `px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                   isActive
@@ -52,29 +56,42 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <NavLink
-              to="/dashboard/profile"
-              className={({ isActive }) =>
-                `relative w-10 h-10 rounded-full overflow-hidden border-2 transition-all cursor-pointer ${
-                  isActive
-                    ? "border-indigo-600 ring-2 ring-indigo-100"
-                    : "border-slate-200 hover:border-indigo-400"
-                }`
-              }
-            >
-              <img
-                src={`https://picsum.photos/id/${1}/200/200`}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            </NavLink>
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="hidden sm:flex"
-            >
-              <Icons.Logout /> Logout
-            </Button>
+            {isAuthenticated ? (
+              <>
+                <NavLink
+                  to="/profile"
+                  className={({ isActive }) =>
+                    `relative w-10 h-10 rounded-full overflow-hidden border-2 transition-all cursor-pointer ${
+                      isActive
+                        ? "border-indigo-600 ring-2 ring-indigo-100"
+                        : "border-slate-200 hover:border-indigo-400"
+                    }`
+                  }
+                >
+                  <img
+                    src={`https://picsum.photos/id/${1}/200/200`}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                </NavLink>
+                <Button
+                  variant="ghost"
+                  onClick={handleLogout}
+                  className="hidden sm:flex"
+                >
+                  <Icons.Logout /> Logout
+                </Button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link to="/login">
+                  <Button variant="ghost">Login</Button>
+                </Link>
+                <Link to="/register">
+                  <Button variant="primary">Register</Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
