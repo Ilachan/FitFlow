@@ -1,5 +1,5 @@
 # User Stories
-
+## successfully completed
 ### User Story 1 – User Registration (Student)
 
 As a new student user, I want to create an account to use the website, so that I can browse and enroll in fitness classes.
@@ -190,5 +190,201 @@ As a student, I want to see the classes I am enrolled in, so that I can manage m
 **Frontend Issue**
 - [FE-35] Display the remaining spots for each class in the course listing UI.
 
-## 6. Ability to "like" a class
-I want to save classes that I am interested.
+## Didn't Completed User Stories (Sprint 1 - Removed)
+The following user stories were deprecated during Sprint 1 development. After user research and team discussions, we determined that these features do not align with current user needs or are lower priority.
+
+---
+
+### ~~User Story X1 – Social Media Login Integration~~
+**Status**: ❌ Deprecated  
+**Reason**: User feedback indicated a preference for traditional email registration due to privacy concerns with social media authorization. The team decided to prioritize core functionality first.
+
+As a new user, I want to register and login using my social media accounts (Google, Facebook, Apple), so that I can quickly access the platform without creating a new password.
+
+#### Acceptance Criteria & Tasks
+
+**Acceptance Criteria:**
+- Users can register using Google, Facebook, or Apple accounts
+- OAuth 2.0 authentication integration
+- Automatically create user profile with social media data
+- Link social accounts to existing email accounts
+
+**Backend Issues**
+- [BE-X1] Integrate OAuth 2.0 for Google authentication.
+- [BE-X2] Integrate OAuth 2.0 for Facebook authentication.
+- [BE-X3] Integrate OAuth 2.0 for Apple Sign-In.
+- [BE-X4] Handle social media token validation and refresh.
+- [BE-X5] Link social accounts to existing user accounts.
+
+**Frontend Issues**
+- [FE-X1] Add Google login button with OAuth flow.
+- [FE-X2] Add Facebook login button with OAuth flow.
+- [FE-X3] Add Apple Sign-In button.
+- [FE-X4] Handle OAuth callback and token storage.
+
+---
+
+### ~~User Story X2 – Friend System & Social Network~~
+**Status**: ❌ Deprecated  
+**Reason**: User interviews revealed that students are more focused on the courses themselves rather than social features. This functionality adds system complexity but is expected to have very low usage.
+
+As a student user, I want to add other students as friends and see their enrolled classes, so that I can join classes with my friends.
+
+#### Acceptance Criteria & Tasks
+
+**Acceptance Criteria:**
+- Users can search for other students by username or email
+- Send and accept friend requests
+- View friends' enrolled classes on their profile
+- Receive notifications for friend requests
+- Friends list displays with avatars and online status
+
+**Backend Issues**
+- [BE-X6] Create friendships table (user_id, friend_id, status, created_at).
+- [BE-X7] Implement POST /api/friends/request endpoint.
+- [BE-X8] Implement PUT /api/friends/accept/:id endpoint.
+- [BE-X9] Implement DELETE /api/friends/:id endpoint.
+- [BE-X10] Implement GET /api/friends endpoint.
+- [BE-X11] Implement GET /api/friends/:id/classes endpoint.
+- [BE-X12] Add privacy settings for profile visibility.
+
+**Frontend Issues**
+- [FE-X5] Build friend search functionality.
+- [FE-X6] Create friend request UI with accept/decline buttons.
+- [FE-X7] Display friends list in user dashboard.
+- [FE-X8] Show friend's enrolled classes on their profile.
+- [FE-X9] Add friend request notifications.
+
+---
+
+### ~~User Story X3 – Class Review & Rating System~~
+**Status**: ❌ Deprecated  
+**Reason**: After communicating with instructors and administrators, they expressed concerns that negative reviews could impact course promotion. The decision was made to use an internal feedback system instead, not publicly visible to students.
+
+As a student user, I want to rate and review classes I've completed, so that I can share my experience and help other students make informed decisions.
+
+#### Acceptance Criteria & Tasks
+
+**Acceptance Criteria:**
+- Students can only review classes they have completed
+- Rating scale: 1-5 stars
+- Text review (optional, 500 character limit)
+- Reviews display average rating on course list
+- Students can edit or delete their own reviews
+- Display reviewer name and date
+
+**Backend Issues**
+- [BE-X13] Create reviews table (id, user_id, class_id, rating, comment, created_at).
+- [BE-X14] Implement POST /api/classes/:id/reviews endpoint.
+- [BE-X15] Implement PUT /api/reviews/:id endpoint.
+- [BE-X16] Implement DELETE /api/reviews/:id endpoint.
+- [BE-X17] Implement GET /api/classes/:id/reviews endpoint.
+- [BE-X18] Calculate and cache average rating for each class.
+- [BE-X19] Add validation: user must have completed the class.
+
+**Frontend Issues**
+- [FE-X10] Create review submission form with star rating component.
+- [FE-X11] Display average rating on course cards.
+- [FE-X12] Build reviews section on class detail page.
+- [FE-X13] Add edit/delete buttons for user's own reviews.
+- [FE-X14] Implement character counter for review text.
+
+---
+
+### ~~User Story X4 – Advanced Class Filtering & Preferences~~
+**Status**: ❌ Deprecated  
+**Reason**: The current course catalog is relatively small (approximately 20-30 classes), and simple search and categorization are sufficient. Advanced filtering features are overly complex and would actually reduce user experience.
+
+As a student user, I want to set my fitness preferences and use advanced filters, so that I can quickly find classes that match my interests and schedule.
+
+#### Acceptance Criteria & Tasks
+
+**Acceptance Criteria:**
+- Save user preferences: intensity level, preferred time slots, favorite instructors
+- Filter classes by: date range, time of day, duration, difficulty level, instructor, location
+- Apply multiple filters simultaneously
+- Save custom filter presets
+- Sort results by: popularity, rating, upcoming time, difficulty
+
+**Backend Issues**
+- [BE-X20] Create user_preferences table.
+- [BE-X21] Implement PUT /api/user/preferences endpoint.
+- [BE-X22] Extend GET /api/courses with query parameters for all filters.
+- [BE-X23] Implement filter preset saving (saved_filters table).
+- [BE-X24] Add sorting logic for multiple criteria.
+- [BE-X25] Optimize database queries with proper indexing.
+
+**Frontend Issues**
+- [FE-X15] Build advanced filter panel with all filter options.
+- [FE-X16] Create user preferences settings page.
+- [FE-X17] Implement filter preset save/load functionality.
+- [FE-X18] Add sorting dropdown in course list.
+- [FE-X19] Display active filters with clear buttons.
+- [FE-X20] Implement filter state persistence in URL.
+
+---
+
+### ~~User Story X5 – Waiting List for Full Classes~~
+**Status**: ❌ Deprecated  
+**Reason**: The development team determined that implementation complexity is high, requiring automatic notification and position management systems. User feedback indicated they prefer to directly browse classes at other time slots.
+
+As a student user, I want to join a waiting list for full classes, so that I can automatically enroll if a spot becomes available.
+
+#### Acceptance Criteria & Tasks
+
+**Acceptance Criteria:**
+- Students can join waiting list when class is at capacity
+- Waiting list shows user's position in queue
+- Automatic enrollment when spot opens (FIFO order)
+- Email/in-app notification when enrolled from waiting list
+- Users can leave waiting list at any time
+- Waiting list expires 24 hours before class start time
+
+**Backend Issues**
+- [BE-X26] Create waiting_list table (id, user_id, class_id, position, created_at).
+- [BE-X27] Implement POST /api/classes/:id/waitlist endpoint.
+- [BE-X28] Implement DELETE /api/waitlist/:id endpoint.
+- [BE-X29] Create background job to process waiting list when spots open.
+- [BE-X30] Implement notification system for automatic enrollment.
+- [BE-X31] Add logic to expire waiting list entries.
+- [BE-X32] Update position numbers when users leave waiting list.
+
+**Frontend Issues**
+- [FE-X21] Add "Join Waiting List" button for full classes.
+- [FE-X22] Display waiting list position in user dashboard.
+- [FE-X23] Add "Leave Waiting List" button.
+- [FE-X24] Show waiting list count on class cards.
+- [FE-X25] Display notification for automatic enrollment.
+
+---
+
+### ~~User Story X6 – Class Recommendation Engine~~
+**Status**: ❌ Deprecated  
+**Reason**: Requires substantial user data and machine learning algorithms. Too advanced for MVP stage, and team resources are insufficient. Decided to defer to future iterations.
+
+As a student user, I want to receive personalized class recommendations based on my history and preferences, so that I can discover new classes that match my interests.
+
+#### Acceptance Criteria & Tasks
+
+**Acceptance Criteria:**
+- System analyzes user's enrollment history and completed classes
+- Recommends similar classes based on type, instructor, time preferences
+- "Recommended for You" section on dashboard
+- Recommendations update after each class completion
+- Option to dismiss or hide recommendations
+
+**Backend Issues**
+- [BE-X33] Design recommendation algorithm based on user behavior.
+- [BE-X34] Implement GET /api/recommendations endpoint.
+- [BE-X35] Create background job to calculate recommendations.
+- [BE-X36] Store recommendation scores in cache (Redis).
+- [BE-X37] Track user interactions with recommendations.
+- [BE-X38] Implement collaborative filtering logic.
+
+**Frontend Issues**
+- [FE-X26] Build "Recommended for You" component on dashboard.
+- [FE-X27] Display recommendation cards with reasoning text.
+- [FE-X28] Add dismiss button for recommendations.
+- [FE-X29] Implement carousel for multiple recommendations.
+- [FE-X30] Track clicks on recommended classes for analytics.
+
