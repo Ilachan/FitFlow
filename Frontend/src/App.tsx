@@ -16,16 +16,17 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected Routes */}
-        <Route element={<AuthGuard />}>
-          <Route path="/dashboard" element={<MainLayout />}>
-            <Route index element={<Navigate to="browse" replace />} />
-            <Route path="browse" element={<Browse />} />
-            <Route path="my-schedule" element={<MySchedule />} />
-            <Route path="profile" element={<Profile />} />
+        {/* Main Layout for public & protected routes */}
+        <Route element={<MainLayout />}>
+          {/* Public Routes */}
+          <Route path="/courses" element={<Browse />} />
+          <Route path="/" element={<Navigate to="/courses" replace />} />
+
+          {/* Protected Routes */}
+          <Route element={<AuthGuard />}>
+            <Route path="/my-schedule" element={<MySchedule />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
-          {/* Default redirect for authenticated users targeting root */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
 
         {/* Fallback for unknown routes */}

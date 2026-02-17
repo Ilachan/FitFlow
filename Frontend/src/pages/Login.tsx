@@ -4,6 +4,7 @@ import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import { Icons } from "../lib/icons";
 import { useAuthStore } from "../store/authStore";
+import toast from "react-hot-toast";
 
 import BackgroundBlobs from "../components/ui/BackgroundBlobs";
 
@@ -18,13 +19,22 @@ const Login = () => {
     const mockToken =
       "mock-jwt-token-" + Math.random().toString(36).substring(7);
     login(mockToken);
-    navigate("/dashboard");
+    toast.success("Welcome back! Successfully logged in.");
+    navigate("/courses");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       <BackgroundBlobs />
       <Card className="w-full max-w-md p-8 relative z-10">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/courses")}
+          className="absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-600"
+        >
+          <Icons.ArrowLeft />
+        </Button>
+
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-linear-to-tr from-violet-600 to-indigo-600 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg shadow-indigo-500/30">
             <span className="text-3xl">💪</span>
