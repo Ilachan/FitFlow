@@ -34,9 +34,13 @@
 ## Tech Stack
 
 **Frontend:**  
-- [React / Angular / Vue / Next.js]  
-- [CSS Framework, e.g., Tailwind, Bootstrap]  
-- Axios / Fetch for API requests  
+* **React 19 (TypeScript):** UI development with strict typing.
+* **Vite:** High-performance build tool and dev server.
+* **Tailwind CSS 4:** Modern utility-first styling for responsive design.
+* **React Router 7:** Handling client-side navigation and protected routes.
+* **Zustand:** Lightweight state management for authentication.
+* **Axios:** Consuming RESTful APIs from the Go backend.
+* **Lucide React:** Consistent and clean UI iconography.
 
 **Backend:**  
 - Go 
