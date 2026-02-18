@@ -1,3 +1,16 @@
+# Sprint 1 Report: FitFlow Team
+
+**Team Members:**
+* **Frontend:** Forrest Yan Sun, Ila Adhikari
+* **Backend:** Qing Li, Yingzhu Chen
+
+**Project Links:**
+* 🔗 **GitHub Repository:** [https://github.com/Ilachan/FitFlow](https://github.com/Ilachan/FitFlow)
+* 📺 **Frontend Demo Video:** [https://youtu.be/GINi2uiHeqY](https://youtu.be/GINi2uiHeqY)
+* 📺 **Backend Demo Video:** [https://youtu.be/yC_YCglcZHM](https://youtu.be/yC_YCglcZHM)
+
+---
+
 # User Stories
 ## successfully completed
 ### User Story 1 – User Registration (Student)
