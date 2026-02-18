@@ -39,8 +39,8 @@
 - Axios / Fetch for API requests  
 
 **Backend:**  
-- [Node.js / Express / Django / Flask]  
-- [Database, e.g., MongoDB, PostgreSQL, MySQL]  
+- Go 
+- SQLite
 - JWT for authentication  
 
 ---
