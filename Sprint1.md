@@ -139,12 +139,11 @@ As a student, I want to enroll in a class, so that I can participate in the cour
 **Backend Issues**
 - [BE-22] Implement POST /api/register with transaction support.
 - [BE-23] Check max capacity before enrollment.
+- [BE-24] Check if enrollment existed.
 
 **Frontend Issue**
 - [FE-31] Implement "Book Now" button.
 
-## 2. Ability to search for different classes
-I can check classes based on different types of fitness formats.
 
 ### User Story 6 – Drop a Class
 
@@ -170,7 +169,7 @@ As a user, I want to view a list of available courses, so that I can discover cl
 **Frontend Issue**
 - [FE-33] Display course list in the UI.
 
-### User Story 8 – View My Enrolled Classes (Student)
+### User Story 8 – View My Enrolled Classes
 
 As a student, I want to see the classes I am enrolled in, so that I can manage my schedule.
 
@@ -181,7 +180,8 @@ As a student, I want to see the classes I am enrolled in, so that I can manage m
 
 **Frontend Issue**
 - [FE-34] Display enrolled courses in dashboard.
-
+- 
+### User Story 9 – View spots left for a class
 #### Acceptance Criteria & Tasks
 
 **Backend Issue**
