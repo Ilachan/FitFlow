@@ -18,67 +18,52 @@ var jwtSecret = []byte("my_super_secret_key_2026")
 // 1. Registration Logic (RegisterUser)
 // ==========================================
 func RegisterUser(input model.RegisterInput) error {
-	// 1. Validate email uniqueness
-	// Check if the email is already registered in the database.
 	if dao.CheckEmailExist(input.Email) {
 		return errors.New("email already exists")
 	}
 
-	// 2. Hash the password (Bcrypt)
-	// Never store plain-text passwords. Bcrypt handles salting and hashing automatically.
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
-	// 3. Retrieve the "Student" Role ID
-	// By default, all new users are assigned the "Student" role.
 	roleID, err := dao.GetRoleByName("Student")
 	if err != nil {
 		return errors.New("role 'Student' not found in database")
 	}
 
-	// 4. Construct the Student object
-	student := model.Student{
+	// NOTE: assumes you've already renamed Student model to User in your codebase
+	user := model.User{
 		Name:     input.Name,
 		Email:    input.Email,
-		Password: string(hashedPassword), // Store the hashed password, not the raw one
+		Password: string(hashedPassword),
 		RoleID:   roleID,
 	}
 
-	// 5. Persist to database
-	return dao.CreateStudent(&student)
+	return dao.CreateUser(&user)
 }
 
 // ==========================================
 // 2. Login Logic (LoginUser)
 // ==========================================
 func LoginUser(input model.LoginInput) (string, error) {
-	// 1. Find user by email
-	student, err := dao.GetStudentByEmail(input.Email)
+	user, err := dao.GetUserByEmail(input.Email)
 	if err != nil {
 		return "", errors.New("user not found")
 	}
 
-	// 2. Verify Password
-	// Compare the stored hash (from DB) with the input password (plain text).
-	err = bcrypt.CompareHashAndPassword([]byte(student.Password), []byte(input.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 	if err != nil {
 		return "", errors.New("invalid password")
 	}
 
-	// 3. Generate JWT Token
-	// Create a new token object, specifying the signing method (HS256) and the claims (payload).
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":      student.ID,                            // User ID
-		"email":   student.Email,                         // User Email
-		"role_id": student.RoleID,                        // Role ID (used for frontend permission checks)
-		//"exp":     time.Now().Add(time.Hour * 24).Unix(), // Expiration time: 24 hours from now
-		"exp":     time.Now().Add(time.Second * 70).Unix(), // Expiration time: 24 hours from now
+		"id":      user.ID,
+		"email":   user.Email,
+		"role_id": user.RoleID,
+		"exp":     time.Now().Add(time.Hour * 48).Unix(),
 	})
 
-	// 4. Sign the token
-	// Sign the token using the secret key to generate the final token string.
 	tokenString, err := token.SignedString(jwtSecret)
 	if err != nil {
 		return "", err
@@ -87,7 +72,8 @@ func LoginUser(input model.LoginInput) (string, error) {
 	return tokenString, nil
 }
 
-// GetStudentIDFromToken extracts the student ID from a JWT token string.
+// GetStudentIDFromToken extracts the user ID from a JWT token string.
+// (function name kept to avoid touching other callers)
 func GetStudentIDFromToken(tokenString string) (uint, error) {
 	claims := jwt.MapClaims{}
 	parsed, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -114,9 +100,35 @@ func GetStudentIDFromToken(tokenString string) (uint, error) {
 	}
 }
 
-// RemoveUser handles the business logic for deleting a user.
+// CHANGED: new helper to extract role_id from token
+func GetRoleIDFromToken(tokenString string) (uint, error) {
+	claims := jwt.MapClaims{}
+	parsed, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+	if err != nil || !parsed.Valid {
+		return 0, errors.New("invalid token")
+	}
+
+	roleValue, ok := claims["role_id"]
+	if !ok {
+		return 0, errors.New("invalid token")
+	}
+
+	switch typed := roleValue.(type) {
+	case float64:
+		return uint(typed), nil
+	case int:
+		return uint(typed), nil
+	case uint:
+		return typed, nil
+	default:
+		return 0, errors.New("invalid token")
+	}
+}
+
 func RemoveUser(id uint) error {
-	return dao.DeleteStudentByID(id)
+	return dao.DeleteUserByID(id)
 }
 
 func GetUserProfile(id uint) (*model.StudentProfile, error) {
@@ -125,4 +137,31 @@ func GetUserProfile(id uint) (*model.StudentProfile, error) {
 
 func UpdateUserProfile(id uint, input model.StudentProfile) error {
 	return dao.UpdateProfile(id, input)
+}
+
+// CHANGED: LoginUserWithRole returns both token and role_id for frontend convenience.
+func LoginUserWithRole(input model.LoginInput) (string, uint, error) {
+	user, err := dao.GetUserByEmail(input.Email)
+	if err != nil {
+		return "", 0, errors.New("user not found")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
+	if err != nil {
+		return "", 0, errors.New("invalid password")
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id":      user.ID,
+		"email":   user.Email,
+		"role_id": user.RoleID,
+		"exp":     time.Now().Add(time.Hour * 70).Unix(),
+	})
+
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return tokenString, user.RoleID, nil
 }

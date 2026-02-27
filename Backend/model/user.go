@@ -8,19 +8,20 @@ type Role struct {
 	RoleName string `gorm:"unique;not null" json:"role_name"`
 }
 
-// Student represents the student user in the database.
-type Student struct {
+// CHANGED: Student -> User (because DB table renamed to "User")
+type User struct {
 	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name      string    `gorm:"not null" json:"name"`
 	Email     string    `gorm:"unique;not null" json:"email"`
 	Password  string    `gorm:"not null" json:"-"` // json:"-" ensures the password is never returned in the API response
 	AvatarURL string    `json:"avatar_url"`
-	RoleID    uint      `json:"role_id"` // Foreign Key
-	Role      Role      `gorm:"foreignKey:RoleID" json:"role"` // Association (Belongs To)
+	RoleID    uint      `json:"role_id"`                          // Foreign Key
+	Role      Role      `gorm:"foreignKey:RoleID" json:"role"`    // Association (Belongs To)
 	CreatedAt time.Time `json:"created_at"`
 }
 
 // StudentProfile represents the combined data from Student and student_info tables
+// NOTE: unchanged on purpose - only Student table renamed per your request.
 type StudentProfile struct {
 	Name        string `json:"name"`
 	Email       string `json:"email"` // Usually read-only in profile updates
@@ -32,6 +33,7 @@ type StudentProfile struct {
 }
 
 // StudentInfo matches your SQL student_info table structure
+// NOTE: unchanged on purpose - only Student table renamed per your request.
 type StudentInfo struct {
 	ID          uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	StudentID   uint   `gorm:"unique;not null" json:"student_id"`
@@ -45,9 +47,9 @@ func (StudentInfo) TableName() string {
 	return "student_info"
 }
 
-// TableName overrides the default table name to "Student".
-func (Student) TableName() string {
-	return "Student"
+// CHANGED: TableName now points to "User"
+func (User) TableName() string {
+	return "User"
 }
 
 // TableName overrides the default table name to "Role".

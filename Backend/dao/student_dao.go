@@ -2,8 +2,10 @@ package dao
 
 import (
 	"errors"
+
 	"my-course-backend/db"
 	"my-course-backend/model"
+
 	"gorm.io/gorm"
 )
 
@@ -21,53 +23,57 @@ func GetRoleByName(name string) (uint, error) {
 // CheckEmailExist checks if the given email already exists in the database.
 func CheckEmailExist(email string) bool {
 	var count int64
-	db.DB.Model(&model.Student{}).Where("email = ?", email).Count(&count)
+	// CHANGED: model.Student{} -> model.User{}
+	db.DB.Model(&model.User{}).Where("email = ?", email).Count(&count)
 	return count > 0
 }
 
-// CreateStudent creates a new student record in the database.
-func CreateStudent(student *model.Student) error {
-	return db.DB.Create(student).Error
+// CHANGED: CreateStudent -> CreateUser
+func CreateUser(user *model.User) error {
+	return db.DB.Create(user).Error
 }
 
-// GetStudentByEmail finds a student by email and preloads their Role information.
-func GetStudentByEmail(email string) (*model.Student, error) {
-	var student model.Student
+// CHANGED: GetStudentByEmail -> GetUserByEmail
+func GetUserByEmail(email string) (*model.User, error) {
+	var user model.User
 	// Preload("Role") eagerly loads the associated Role data, which is often needed by the frontend.
-	err := db.DB.Where("email = ?", email).Preload("Role").First(&student).Error
+	err := db.DB.Where("email = ?", email).Preload("Role").First(&user).Error
 	if err != nil {
 		return nil, err
 	}
-	return &student, nil
+	return &user, nil
 }
 
-// GetProfileByID fetches combined data from Student and student_info
+// GetProfileByID fetches combined data from User and student_info
 func GetProfileByID(id uint) (*model.StudentProfile, error) {
 	var profile model.StudentProfile
-	// Join Student table with student_info table using student_id 
-	err := db.DB.Table("Student").
-		Select("Student.name, Student.email, Student.avatar_url, student_info.date_of_birth, student_info.gender, student_info.phone_number, student_info.address").
-		Joins("left join student_info on student_info.student_id = Student.id").
-		Where("Student.id = ?", id).
+
+	// CHANGED: all "Student" table refs -> "User"
+	// NOTE: student_info table remains unchanged per your request.
+	err := db.DB.Table("User").
+		Select("User.name, User.email, User.avatar_url, student_info.date_of_birth, student_info.gender, student_info.phone_number, student_info.address").
+		Joins("left join student_info on student_info.student_id = User.id").
+		Where("User.id = ?", id).
 		Scan(&profile).Error
+
 	return &profile, err
 }
 
 // UpdateProfile updates both tables in a single transaction
 func UpdateProfile(id uint, p model.StudentProfile) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
-		// 1. Update Student table [cite: 7]
-		if err := tx.Model(&model.Student{}).Where("id = ?", id).Updates(map[string]interface{}{
+		// CHANGED: tx.Model(&model.Student{}) -> tx.Model(&model.User{})
+		if err := tx.Model(&model.User{}).Where("id = ?", id).Updates(map[string]interface{}{
 			"name":       p.Name,
 			"avatar_url": p.AvatarURL,
 		}).Error; err != nil {
 			return err
 		}
 
-		// 2. Update or Create student_info table 
+		// 2. Update or Create student_info table (unchanged)
 		var info model.StudentInfo
 		err := tx.Where("student_id = ?", id).First(&info).Error
-		
+
 		infoData := model.StudentInfo{
 			StudentID:   id,
 			DateOfBirth: p.DateOfBirth,
@@ -84,19 +90,19 @@ func UpdateProfile(id uint, p model.StudentProfile) error {
 	})
 }
 
-// DeleteStudentByID deletes a student record by their ID.
-func DeleteStudentByID(id uint) error {
-	// Perform the delete operation
-	result := db.DB.Delete(&model.Student{}, id)
-	
+// CHANGED: DeleteStudentByID -> DeleteUserByID
+func DeleteUserByID(id uint) error {
+	// CHANGED: model.Student{} -> model.User{}
+	result := db.DB.Delete(&model.User{}, id)
+
 	if result.Error != nil {
 		return result.Error
 	}
-	
+
 	// If RowsAffected is 0, it means the ID does not exist in the database.
 	if result.RowsAffected == 0 {
 		return errors.New("user not found")
 	}
-	
+
 	return nil
 }

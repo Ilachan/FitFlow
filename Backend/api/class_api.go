@@ -13,6 +13,7 @@ import (
 )
 
 // RegisterClass registers a student for a course.
+// Auth required, and role_id must be 1/2/3.
 func RegisterClass(c *gin.Context) {
 	var input model.StudentEnrollmentRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -20,9 +21,8 @@ func RegisterClass(c *gin.Context) {
 		return
 	}
 
-	studentID, err := getStudentIDFromAuthHeader(c)
+	studentID, err := requireRegisterPermission(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -42,6 +42,7 @@ func RegisterClass(c *gin.Context) {
 }
 
 // DropClass removes a student from a course.
+// Auth required, and role_id must be 1/2/3.
 func DropClass(c *gin.Context) {
 	var input model.StudentEnrollmentRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -49,9 +50,8 @@ func DropClass(c *gin.Context) {
 		return
 	}
 
-	studentID, err := getStudentIDFromAuthHeader(c)
+	studentID, err := requireRegisterPermission(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -67,39 +67,34 @@ func DropClass(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Class dropped successfully"})
 }
 
-// CreateClass adds a new class to the catalog.
-// Disabled: classes are imported manually into the DB.
-// func CreateClass(c *gin.Context) {
-// 	var input model.CreateClassInput
-// 	if err := c.ShouldBindJSON(&input); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-//
-// 	if err := service.CreateClass(input); err != nil {
-// 		if err.Error() == "capacity must be at least 1" {
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 			return
-// 		}
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-//
-// 	c.JSON(http.StatusCreated, gin.H{"message": "Class created successfully"})
-// }
-
-// ListClasses returns all courses.
+// ListClasses returns paginated courses. Public endpoint.
+// GET /classes?page=1
 func ListClasses(c *gin.Context) {
-	classes, err := service.ListClasses()
+	const pageSize = 20
+
+	pageStr := c.Query("page")
+	page := 1
+	if pageStr != "" {
+		if v, err := strconv.Atoi(pageStr); err == nil && v > 0 {
+			page = v
+		}
+	}
+
+	classes, total, err := service.ListClassesPaged(page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"classes": classes})
+	c.JSON(http.StatusOK, gin.H{
+		"page":      page,
+		"page_size": pageSize,
+		"total":     total,
+		"classes":   classes,
+	})
 }
 
-// GetClass returns a single course by ID.
+// GetClass returns a single course by ID. Public endpoint.
 func GetClass(c *gin.Context) {
 	classIDStr := c.Param("id")
 	classID, err := strconv.ParseUint(classIDStr, 10, 32)
@@ -182,4 +177,46 @@ func getStudentIDFromAuthHeader(c *gin.Context) (uint, error) {
 	}
 
 	return service.GetStudentIDFromToken(tokenString)
+}
+
+func getRoleIDFromAuthHeader(c *gin.Context) (uint, error) {
+	authorization := strings.TrimSpace(c.GetHeader("Authorization"))
+	if authorization == "" {
+		return 0, errors.New("missing authorization header")
+	}
+
+	const bearerPrefix = "Bearer "
+	if !strings.HasPrefix(authorization, bearerPrefix) {
+		return 0, errors.New("invalid authorization header")
+	}
+
+	tokenString := strings.TrimSpace(strings.TrimPrefix(authorization, bearerPrefix))
+	if tokenString == "" {
+		return 0, errors.New("invalid authorization header")
+	}
+
+	return service.GetRoleIDFromToken(tokenString)
+}
+
+// register/drop permission check
+func requireRegisterPermission(c *gin.Context) (uint, error) {
+	studentID, err := getStudentIDFromAuthHeader(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return 0, err
+	}
+
+	roleID, err := getRoleIDFromAuthHeader(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return 0, err
+	}
+
+	// role_id 1(Student)/2(SuperManager)/3(Manager) are allowed
+	if roleID != 1 && roleID != 2 && roleID != 3 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: insufficient role permissions"})
+		return 0, errors.New("forbidden")
+	}
+
+	return studentID, nil
 }

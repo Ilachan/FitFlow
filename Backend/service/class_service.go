@@ -53,6 +53,30 @@ func ListClassRegistrations(courseID uint) ([]model.StudentEnrollment, error) {
 	}
 	return dao.ListRegistrationsByClass(courseID)
 }
+// CHANGED/NEW: ListClassesPaged returns paged result with spot filled.
+func ListClassesPaged(page int, pageSize int) ([]model.Course, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+
+	offset := (page - 1) * pageSize
+
+	classes, total, err := dao.ListClassesPaged(pageSize, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for i := range classes {
+		if err := fillCourseSpot(&classes[i]); err != nil {
+			return nil, 0, err
+		}
+	}
+
+	return classes, total, nil
+}
 
 func fillCourseSpot(class *model.Course) error {
 	count, err := dao.CountRegistrationsByClass(class.ID)

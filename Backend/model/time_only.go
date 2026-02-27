@@ -65,10 +65,12 @@ func (t *TimeOnly) UnmarshalJSON(data []byte) error {
 }
 
 func (t *TimeOnly) parseString(value string) error {
+	value = strings.TrimSpace(value)
 	if value == "" {
 		t.Time = time.Time{}
 		return nil
 	}
+
 	parsed, err := time.ParseInLocation(timeOnlyLayout, value, time.Local)
 	if err != nil {
 		parsed, err = time.ParseInLocation(timeOnlyShortLayout, value, time.Local)
@@ -78,4 +80,13 @@ func (t *TimeOnly) parseString(value string) error {
 	}
 	t.Time = parsed
 	return nil
+}
+
+// ParseTimeOnly parses "HH:MM" or "HH:MM:SS" into a TimeOnly value.
+func ParseTimeOnly(value string) (TimeOnly, error) {
+	var t TimeOnly
+	if err := t.parseString(value); err != nil {
+		return TimeOnly{}, err
+	}
+	return t, nil
 }

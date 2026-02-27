@@ -16,7 +16,6 @@ func InitDB() {
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
-
 	DB.Exec("PRAGMA foreign_keys = ON;")
 	// Normalize TIME values to HH:MM:SS for consistent scanning.
 	if DB.Migrator().HasTable("Course") {

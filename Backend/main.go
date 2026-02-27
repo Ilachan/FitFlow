@@ -1,9 +1,8 @@
 package main
 
 import (
-	"log" // [Fixed] Added missing import for log.Printf
+	"log"
 
-	// Ensure these match your go.mod module name
 	"my-course-backend/db"
 	"my-course-backend/model"
 	"my-course-backend/routes"
@@ -14,12 +13,13 @@ func main() {
 	db.InitDB()
 
 	// 2. Auto Migrate Table Structures
-	db.DB.AutoMigrate(&model.Role{}, &model.Student{}, &model.Course{}, &model.StudentEnrollment{})
+	// CHANGED: &model.Student{} -> &model.User{}
+	db.DB.AutoMigrate(&model.Role{}, &model.User{}, &model.Course{}, &model.StudentEnrollment{})
 
 	// 3. Seed Initial Data
 	seedRoles()
 
-	// 4. Initialize Router (Call function from routes package)
+	// 4. Initialize Router
 	r := routes.SetupRouter()
 
 	// 5. Start Server
@@ -31,7 +31,6 @@ func seedRoles() {
 	roles := []string{"Admin", "Teacher", "Student"}
 	for _, roleName := range roles {
 		var role model.Role
-		// Check if role exists, if not, create it
 		if err := db.DB.Where("role_name = ?", roleName).First(&role).Error; err != nil {
 			db.DB.Create(&model.Role{RoleName: roleName})
 			log.Printf("Created role: %s", roleName)

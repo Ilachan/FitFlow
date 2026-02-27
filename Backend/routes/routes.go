@@ -28,14 +28,17 @@ func SetupRouter() *gin.Engine {
 	// Auth Route Group
 	// Prefix: /auth
 	authRoutes := r.Group("/auth")
-{
+	{
     authRoutes.POST("/register", api.Register)
+	// CHANGED: SuperManager creates manager invite codes
+	authRoutes.POST("/manager/invite-codes", api.CreateManagerInviteCode)
+	authRoutes.POST("/manager/register", api.ManagerRegister)
     authRoutes.POST("/login", api.Login)
     
     // New Profile Endpoints
     authRoutes.GET("/profile", api.GetProfile)
     authRoutes.PUT("/profile", api.UpdateProfile)
-}
+	}
 	// User Route Group
 	// Prefix: /users
 	userRoutes := r.Group("/users")
@@ -50,19 +53,19 @@ func SetupRouter() *gin.Engine {
 	// Prefix: /classes
 	classRoutes := r.Group("/classes")
 	{
-		// POST /classes
-		// Disabled: classes are imported manually into the DB.
-		// classRoutes.POST("", api.CreateClass)
-		// GET /classes
-		classRoutes.GET("", api.ListClasses)
-		// GET /classes/:id
-		classRoutes.GET("/:id", api.GetClass)
-		// GET /classes/:id/registrations
-		classRoutes.GET("/:id/registrations", api.ListClassRegistrations)
-		// POST /classes/register
-		classRoutes.POST("/register", api.RegisterClass)
-		// POST /classes/drop
-		classRoutes.POST("/drop", api.DropClass)
+	// public
+	classRoutes.GET("", api.ListClasses)
+	classRoutes.GET("/:id", api.GetClass)
+	classRoutes.GET("/:id/registrations", api.ListClassRegistrations)
+
+	// student actions
+	classRoutes.POST("/register", api.RegisterClass)
+	classRoutes.POST("/drop", api.DropClass)
+
+	// manager-only
+	classRoutes.POST("", api.ManagerCreateClass)
+	classRoutes.PUT("/:id", api.ManagerUpdateClass)
+	classRoutes.DELETE("/:id", api.ManagerDeleteClass)
 	}
 
 	// Note: Future Course Route Group can be added here...

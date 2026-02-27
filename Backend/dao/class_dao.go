@@ -2,6 +2,7 @@ package dao
 
 import (
 	"errors"
+
 	"my-course-backend/db"
 	"my-course-backend/model"
 )
@@ -15,6 +16,22 @@ func GetCourseByID(id uint) (*model.Course, error) {
 	return &class, nil
 }
 
+// ListClassesPaged returns paginated courses and total count.
+func ListClassesPaged(limit int, offset int) ([]model.Course, int64, error) {
+	var classes []model.Course
+	var total int64
+
+	if err := db.DB.Model(&model.Course{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := db.DB.Order("start_time ASC").Limit(limit).Offset(offset).Find(&classes).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return classes, total, nil
+}
+
 // ListClasses retrieves all courses.
 func ListClasses() ([]model.Course, error) {
 	var classes []model.Course
@@ -24,19 +41,14 @@ func ListClasses() ([]model.Course, error) {
 	return classes, nil
 }
 
-// CreateClass inserts a new course.
-// Disabled: classes are imported manually into the DB.
-// func CreateClass(class *model.Course) error {
-// 	return db.DB.Create(class).Error
-// }
-
-// GetStudentByID retrieves a student by ID.
-func GetStudentByID(id uint) (*model.Student, error) {
-	var student model.Student
-	if err := db.DB.First(&student, id).Error; err != nil {
+// GetStudentByID now reads from User table/model.
+// Note: function name kept as GetStudentByID to reduce cross-file changes.
+func GetStudentByID(id uint) (*model.User, error) {
+	var user model.User
+	if err := db.DB.First(&user, id).Error; err != nil {
 		return nil, err
 	}
-	return &student, nil
+	return &user, nil
 }
 
 // CheckRegistrationExists checks if a student is already registered for a course.
@@ -79,11 +91,11 @@ func DeleteRegistration(studentID uint, courseID uint) error {
 	return nil
 }
 
-// ListRegistrationsByClass returns registrations for a course with student info.
+// ListRegistrationsByClass returns registrations for a course with user info.
 func ListRegistrationsByClass(courseID uint) ([]model.StudentEnrollment, error) {
 	var registrations []model.StudentEnrollment
 	if err := db.DB.Where("course_id = ?", courseID).
-		Preload("Student").
+		Preload("User").
 		Find(&registrations).Error; err != nil {
 		return nil, err
 	}
@@ -100,4 +112,19 @@ func ListEnrolledCoursesByStudent(studentID uint) ([]model.Course, error) {
 		return nil, err
 	}
 	return courses, nil
+}
+
+// NEW: CreateCourse inserts a new course.
+func CreateCourse(course *model.Course) error {
+	return db.DB.Create(course).Error
+}
+
+// NEW: UpdateCourse updates an existing course (all fields).
+func UpdateCourse(course *model.Course) error {
+	return db.DB.Save(course).Error
+}
+
+// NEW: DeleteCourseByID deletes a course by ID.
+func DeleteCourseByID(id uint) error {
+	return db.DB.Delete(&model.Course{}, id).Error
 }
