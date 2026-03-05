@@ -165,6 +165,30 @@ func GetStudentEnrolledClasses(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"courses": courses})
 }
 
+// GetStudentAnalytics returns student dashboard analytics for 7d, 1m, or 3m.
+func GetStudentAnalytics(c *gin.Context) {
+	studentIDStr := c.Param("id")
+	studentID, err := strconv.ParseUint(studentIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+		return
+	}
+
+	rangeKey := strings.TrimSpace(c.DefaultQuery("range", "7d"))
+
+	analytics, err := service.GetStudentAnalytics(uint(studentID), rangeKey)
+	if err != nil {
+		if err.Error() == "student not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"analytics": analytics})
+}
+
 func getStudentIDFromAuthHeader(c *gin.Context) (uint, error) {
 	authorization := strings.TrimSpace(c.GetHeader("Authorization"))
 	if authorization == "" {

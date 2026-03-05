@@ -43,6 +43,8 @@ func SetupRouter() *gin.Engine {
 		userRoutes.DELETE("/:id", api.DeleteUser)
 		// GET /users/:id/enrollments (get student's enrolled courses)
 		userRoutes.GET("/:id/enrollments", api.GetStudentEnrolledClasses)
+		// GET /users/:id/analytics?range=7d|1m|3m
+		userRoutes.GET("/:id/analytics", api.GetStudentAnalytics)
 	}
 
 	// Class Route Group

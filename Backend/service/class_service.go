@@ -2,8 +2,10 @@ package service
 
 import (
 	"errors"
+	"math"
 	"my-course-backend/dao"
 	"my-course-backend/model"
+	"time"
 )
 
 // RegisterClass registers a student for a course.
@@ -38,7 +40,18 @@ func RegisterClass(studentID uint, courseID uint) error {
 		CourseID:  courseID,
 		Status:    "registered",
 	}
-	return dao.CreateRegistration(&registration)
+	if err := dao.CreateRegistration(&registration); err != nil {
+		return err
+	}
+
+	activity := model.StudentDailyActivity{
+		EnrollmentID: registration.ID,
+		StudentID:    studentID,
+		CourseID:     courseID,
+		ActivityDate: time.Now(),
+	}
+
+	return dao.CreateDailyActivity(&activity)
 }
 
 // DropClass removes a student's registration from a course.
@@ -113,4 +126,78 @@ func GetStudentEnrolledClasses(studentID uint) ([]model.Course, error) {
 	}
 
 	return courses, nil
+}
+
+// GetStudentAnalytics returns dashboard analytics for a date range.
+func GetStudentAnalytics(studentID uint, rangeKey string) (*model.StudentAnalyticsResponse, error) {
+	if _, err := dao.GetStudentByID(studentID); err != nil {
+		return nil, errors.New("student not found")
+	}
+
+	if err := dao.BackfillStudentDailyActivityFromEnrollments(studentID); err != nil {
+		return nil, err
+	}
+
+	toDate := time.Now()
+	fromDate := resolveRangeStart(rangeKey, toDate)
+
+	totalActivities, totalClasses, activeDays, err := dao.GetStudentActivityStats(studentID, fromDate, toDate)
+	if err != nil {
+		return nil, err
+	}
+
+	daily, err := dao.GetStudentDailyActivitySummary(studentID, fromDate, toDate)
+	if err != nil {
+		return nil, err
+	}
+
+	categories, err := dao.GetStudentCategoryActivitySummary(studentID, fromDate, toDate)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range categories {
+		if totalActivities <= 0 {
+			categories[i].Percentage = 0
+			continue
+		}
+		percentage := (float64(categories[i].Activities) / float64(totalActivities)) * 100
+		categories[i].Percentage = math.Round(percentage*100) / 100
+	}
+
+	response := &model.StudentAnalyticsResponse{
+		StudentID:       studentID,
+		Range:           normalizeRangeKey(rangeKey),
+		FromDate:        fromDate.Format("2006-01-02"),
+		ToDate:          toDate.Format("2006-01-02"),
+		TotalActivities: totalActivities,
+		TotalClasses:    totalClasses,
+		ActiveDays:      activeDays,
+		Daily:           daily,
+		Categories:      categories,
+	}
+
+	return response, nil
+}
+
+func resolveRangeStart(rangeKey string, now time.Time) time.Time {
+	key := normalizeRangeKey(rangeKey)
+
+	switch key {
+	case "1m":
+		return now.AddDate(0, -1, 0)
+	case "3m":
+		return now.AddDate(0, -3, 0)
+	default:
+		return now.AddDate(0, 0, -7)
+	}
+}
+
+func normalizeRangeKey(rangeKey string) string {
+	switch rangeKey {
+	case "1m", "3m":
+		return rangeKey
+	default:
+		return "7d"
+	}
 }

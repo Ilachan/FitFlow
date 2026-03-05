@@ -14,7 +14,7 @@ func main() {
 	db.InitDB()
 
 	// 2. Auto Migrate Table Structures
-	db.DB.AutoMigrate(&model.Role{}, &model.Student{}, &model.Course{}, &model.StudentEnrollment{})
+	db.DB.AutoMigrate(&model.Role{}, &model.Student{}, &model.Course{}, &model.StudentEnrollment{}, &model.StudentDailyActivity{})
 
 	// 3. Seed Initial Data
 	seedRoles()
