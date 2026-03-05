@@ -141,7 +141,7 @@ func GetStudentAnalytics(studentID uint, rangeKey string) (*model.StudentAnalyti
 	toDate := time.Now()
 	fromDate := resolveRangeStart(rangeKey, toDate)
 
-	totalActivities, totalClasses, activeDays, err := dao.GetStudentActivityStats(studentID, fromDate, toDate)
+	totalClasses, activeDays, err := dao.GetStudentActivityStats(studentID, fromDate, toDate)
 	if err != nil {
 		return nil, err
 	}
@@ -157,24 +157,23 @@ func GetStudentAnalytics(studentID uint, rangeKey string) (*model.StudentAnalyti
 	}
 
 	for i := range categories {
-		if totalActivities <= 0 {
+		if totalClasses <= 0 {
 			categories[i].Percentage = 0
 			continue
 		}
-		percentage := (float64(categories[i].Activities) / float64(totalActivities)) * 100
+		percentage := (float64(categories[i].Classes) / float64(totalClasses)) * 100
 		categories[i].Percentage = math.Round(percentage*100) / 100
 	}
 
 	response := &model.StudentAnalyticsResponse{
-		StudentID:       studentID,
-		Range:           normalizeRangeKey(rangeKey),
-		FromDate:        fromDate.Format("2006-01-02"),
-		ToDate:          toDate.Format("2006-01-02"),
-		TotalActivities: totalActivities,
-		TotalClasses:    totalClasses,
-		ActiveDays:      activeDays,
-		Daily:           daily,
-		Categories:      categories,
+		StudentID:    studentID,
+		Range:        normalizeRangeKey(rangeKey),
+		FromDate:     fromDate.Format("2006-01-02"),
+		ToDate:       toDate.Format("2006-01-02"),
+		TotalClasses: totalClasses,
+		ActiveDays:   activeDays,
+		Daily:        daily,
+		Categories:   categories,
 	}
 
 	return response, nil

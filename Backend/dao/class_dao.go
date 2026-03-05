@@ -129,23 +129,22 @@ func BackfillStudentDailyActivityFromEnrollments(studentID uint) error {
 }
 
 // GetStudentActivityStats returns total activity stats in a date range.
-func GetStudentActivityStats(studentID uint, fromDate time.Time, toDate time.Time) (int64, int64, int64, error) {
+func GetStudentActivityStats(studentID uint, fromDate time.Time, toDate time.Time) (int64, int64, error) {
 	type statsResult struct {
-		TotalActivities int64
-		TotalClasses    int64
-		ActiveDays      int64
+		TotalClasses int64
+		ActiveDays   int64
 	}
 
 	var result statsResult
 	err := db.DB.Model(&model.StudentDailyActivity{}).
-		Select("COUNT(*) as total_activities, COUNT(DISTINCT course_id) as total_classes, COUNT(DISTINCT activity_date) as active_days").
+		Select("COUNT(*) as total_classes, COUNT(DISTINCT activity_date) as active_days").
 		Where("student_id = ? AND activity_date BETWEEN ? AND ?", studentID, fromDate.Format("2006-01-02"), toDate.Format("2006-01-02")).
 		Scan(&result).Error
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, err
 	}
 
-	return result.TotalActivities, result.TotalClasses, result.ActiveDays, nil
+	return result.TotalClasses, result.ActiveDays, nil
 }
 
 // GetStudentDailyActivitySummary returns grouped daily analytics for the student.
@@ -154,8 +153,7 @@ func GetStudentDailyActivitySummary(studentID uint, fromDate time.Time, toDate t
 
 	err := db.DB.Table("StudentDailyActivity AS sda").
 		Select(`DATE(sda.activity_date) AS date,
-			COUNT(*) AS activities,
-			COUNT(DISTINCT sda.course_id) AS class_count`).
+			COUNT(*) AS classes`).
 		Where("sda.student_id = ? AND sda.activity_date BETWEEN ? AND ?", studentID, fromDate.Format("2006-01-02"), toDate.Format("2006-01-02")).
 		Group("DATE(sda.activity_date)").
 		Order("DATE(sda.activity_date) ASC").
@@ -173,12 +171,11 @@ func GetStudentCategoryActivitySummary(studentID uint, fromDate time.Time, toDat
 
 	err := db.DB.Table("StudentDailyActivity AS sda").
 		Select(`COALESCE(NULLIF(TRIM(c.category), ''), 'Uncategorized') AS category,
-			COUNT(*) AS activities,
-			COUNT(DISTINCT sda.course_id) AS class_count`).
+			COUNT(*) AS classes`).
 		Joins("INNER JOIN Course c ON c.id = sda.course_id").
 		Where("sda.student_id = ? AND sda.activity_date BETWEEN ? AND ?", studentID, fromDate.Format("2006-01-02"), toDate.Format("2006-01-02")).
 		Group("COALESCE(NULLIF(TRIM(c.category), ''), 'Uncategorized')").
-		Order("activities DESC, category ASC").
+		Order("classes DESC, category ASC").
 		Scan(&categories).Error
 	if err != nil {
 		return nil, err

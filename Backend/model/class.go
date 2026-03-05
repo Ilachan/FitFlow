@@ -39,28 +39,25 @@ type StudentDailyActivity struct {
 }
 
 type DailyActivitySummary struct {
-	Date       string `json:"date"`
-	Activities int64  `json:"activities"`
-	ClassCount int64  `json:"class_count"`
+	Date    string `json:"date"`
+	Classes int64  `json:"classes"`
 }
 
 type CategoryActivitySummary struct {
 	Category   string  `json:"category"`
-	Activities int64   `json:"activities"`
-	ClassCount int64   `json:"class_count"`
+	Classes    int64   `json:"classes"`
 	Percentage float64 `json:"percentage"`
 }
 
 type StudentAnalyticsResponse struct {
-	StudentID       uint                      `json:"student_id"`
-	Range           string                    `json:"range"`
-	FromDate        string                    `json:"from_date"`
-	ToDate          string                    `json:"to_date"`
-	TotalActivities int64                     `json:"total_activities"`
-	TotalClasses    int64                     `json:"total_classes"`
-	ActiveDays      int64                     `json:"active_days"`
-	Daily           []DailyActivitySummary    `json:"daily"`
-	Categories      []CategoryActivitySummary `json:"categories"`
+	StudentID    uint                      `json:"student_id"`
+	Range        string                    `json:"range"`
+	FromDate     string                    `json:"from_date"`
+	ToDate       string                    `json:"to_date"`
+	TotalClasses int64                     `json:"total_classes"`
+	ActiveDays   int64                     `json:"active_days"`
+	Daily        []DailyActivitySummary    `json:"daily"`
+	Categories   []CategoryActivitySummary `json:"categories"`
 }
 
 // TableName overrides the default table name to "Course".

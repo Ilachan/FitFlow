@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 	"strconv"
-	
+
 	// Ensure these match your go.mod module name
 	"my-course-backend/model"
 	"my-course-backend/service"
@@ -73,8 +73,19 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
+	authStudentID, err := getStudentIDFromAuthHeader(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	if uint(id) != authStudentID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
 	// 3. Call Service
-	if err := service.RemoveUser(uint(id)); err != nil {
+	if err := service.RemoveUser(authStudentID); err != nil {
 		// Return 404 if user not found, otherwise 500
 		if err.Error() == "user not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})

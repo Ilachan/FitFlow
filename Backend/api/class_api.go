@@ -152,7 +152,18 @@ func GetStudentEnrolledClasses(c *gin.Context) {
 		return
 	}
 
-	courses, err := service.GetStudentEnrolledClasses(uint(studentID))
+	authStudentID, err := getStudentIDFromAuthHeader(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	if uint(studentID) != authStudentID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
+	courses, err := service.GetStudentEnrolledClasses(authStudentID)
 	if err != nil {
 		if err.Error() == "student not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -174,9 +185,20 @@ func GetStudentAnalytics(c *gin.Context) {
 		return
 	}
 
+	authStudentID, err := getStudentIDFromAuthHeader(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	if uint(studentID) != authStudentID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
 	rangeKey := strings.TrimSpace(c.DefaultQuery("range", "7d"))
 
-	analytics, err := service.GetStudentAnalytics(uint(studentID), rangeKey)
+	analytics, err := service.GetStudentAnalytics(authStudentID, rangeKey)
 	if err != nil {
 		if err.Error() == "student not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
