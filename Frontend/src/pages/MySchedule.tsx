@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { ENROLLED, HISTORY } from "../lib/constants";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -24,31 +24,31 @@ const BRAND_COLORS = [
     'var(--color-brand-amber)'
 ];
 
+const now = new Date()
+
+
 const MySchedule = () => {
     const [showModal, setShowModal] = useState(false);
     const [activeTab, setActiveTab] = useState<"upcoming" | "history">("upcoming");
     const [timeRange, setTimeRange] = useState<TimeRange>("month");
 
-    // Use current date based on mock data timeline (March 11, 2026)
-    const referenceDate = new Date(2026, 2, 11);
-
     const filteredHistory = useMemo(() => {
         let start, end;
         if (timeRange === "week") {
-            start = startOfWeek(referenceDate);
-            end = endOfWeek(referenceDate);
+            start = startOfWeek(now);
+            end = endOfWeek(now);
         } else if (timeRange === "month") {
-            start = startOfMonth(referenceDate);
-            end = endOfMonth(referenceDate);
+            start = startOfMonth(now);
+            end = endOfMonth(now);
         } else {
-            start = startOfYear(referenceDate);
-            end = referenceDate;
+            start = startOfYear(now);
+            end = now;
         }
 
         return HISTORY.filter(item => 
             isWithinInterval(parseISO(item.date), { start, end })
         );
-    }, [timeRange]);
+    }, [timeRange, now]);
 
     // Process data for charts
     const totalSessions = filteredHistory.length;
@@ -67,8 +67,8 @@ const MySchedule = () => {
     const frequencyData = useMemo(() => {
         if (timeRange === "year") {
             const months = eachMonthOfInterval({
-                start: startOfYear(referenceDate),
-                end: referenceDate
+                start: startOfYear(now),
+                end: now
             });
             return months.map(m => {
                 const monthStr = format(m, 'MMM');
@@ -78,10 +78,10 @@ const MySchedule = () => {
                 return { label: monthStr, count };
             });
         } else {
-            const intervalStart = timeRange === "week" ? startOfWeek(referenceDate) : startOfMonth(referenceDate);
+            const intervalStart = timeRange === "week" ? startOfWeek(now) : startOfMonth(now);
             const days = eachDayOfInterval({
                 start: intervalStart,
-                end: referenceDate
+                end: now
             });
             return days.map(d => {
                 const dateStr = format(d, 'yyyy-MM-dd');
@@ -92,7 +92,7 @@ const MySchedule = () => {
                 };
             });
         }
-    }, [filteredHistory, timeRange]);
+    }, [filteredHistory, timeRange, now]);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
