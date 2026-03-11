@@ -1,3 +1,110 @@
+export const ENROLLED = [
+  {
+    id: 1,
+    title: "Sunrise Vinyasa",
+    instructor: "Sarah J.",
+    time: "Mon, 08:00 AM",
+    status: "upcoming",
+  },
+];
+
+export const HISTORY = [
+  // This Month (March 2026)
+  {
+    id: 101,
+    title: "HIIT Burn",
+    instructor: "Mike T.",
+    date: "2026-03-10",
+    time: "06:30 PM",
+    duration: 1.0,
+    type: "Cardio",
+    status: "completed",
+  },
+  {
+    id: 102,
+    title: "Core Pilates",
+    instructor: "Emily R.",
+    date: "2026-03-08",
+    time: "05:00 PM",
+    duration: 0.75,
+    type: "Pilates",
+    status: "completed",
+  },
+  {
+    id: 103,
+    title: "Sunrise Vinyasa",
+    instructor: "Sarah J.",
+    date: "2026-03-05",
+    time: "08:00 AM",
+    duration: 1.25,
+    type: "Yoga",
+    status: "completed",
+  },
+  // Last Month (Feb 2026)
+  {
+    id: 104,
+    title: "Power Flow",
+    instructor: "Sarah J.",
+    date: "2026-02-28",
+    time: "09:00 AM",
+    duration: 1.0,
+    type: "Yoga",
+    status: "completed",
+  },
+  {
+    id: 105,
+    title: "Cardio Kickbox",
+    instructor: "Alex K.",
+    date: "2026-02-15",
+    time: "06:00 PM",
+    duration: 1.0,
+    type: "Cardio",
+    status: "completed",
+  },
+  // Earlier this year (Jan 2026)
+  {
+    id: 106,
+    title: "Zen Meditation",
+    instructor: "David L.",
+    date: "2026-01-20",
+    time: "07:30 PM",
+    duration: 0.5,
+    type: "Yoga",
+    status: "completed",
+  },
+  {
+    id: 107,
+    title: "Strength Basics",
+    instructor: "Mike T.",
+    date: "2026-01-10",
+    time: "10:00 AM",
+    duration: 1.0,
+    type: "Strength",
+    status: "completed",
+  },
+  // Last Year (2025)
+  {
+    id: 108,
+    title: "Year End Yoga",
+    instructor: "Sarah J.",
+    date: "2025-12-28",
+    time: "08:00 AM",
+    duration: 1.5,
+    type: "Yoga",
+    status: "completed",
+  },
+  {
+    id: 109,
+    title: "Winter HIIT",
+    instructor: "Mike T.",
+    date: "2025-11-15",
+    time: "06:00 PM",
+    duration: 1.0,
+    type: "Cardio",
+    status: "completed",
+  }
+];
+
 export const COURSES = [
   {
     id: 1,
@@ -31,15 +138,5 @@ export const COURSES = [
     capacity: 15,
     type: "Pilates",
     image: "💪",
-  },
-];
-
-export const ENROLLED = [
-  {
-    id: 1,
-    title: "Sunrise Vinyasa",
-    instructor: "Sarah J.",
-    time: "Mon, 08:00 AM",
-    status: "upcoming",
   },
 ];
