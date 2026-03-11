@@ -72,6 +72,37 @@ const CustomEvent = (props: any) => {
   );
 };
 
+// Month View Event Component (Compact)
+const MonthEvent = (props: any) => {
+  const event = props.calendarEvent;
+  const colors = event._style || COLOR_STYLES[0];
+
+  return (
+    <div 
+      className="sx__month-event-wrapper"
+      style={{ 
+        backgroundColor: colors.bg, 
+        borderLeft: `2px solid ${colors.border}`,
+        padding: '2px 6px',
+        borderRadius: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        fontSize: '0.7rem',
+        fontWeight: 600,
+        color: colors.text,
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        width: '100%'
+      }}
+    >
+      <span className="shrink-0">{event.image}</span>
+      <span className="shrink-0 opacity-70 font-bold" style={{ fontSize: '0.6rem' }}>{event.time.split(' ')[0]}</span>
+      <span className="truncate">{event.title}</span>
+    </div>
+  );
+};
+
 const CalendarView = ({ courses = COURSES }: CalendarViewProps) => {
   const now = Temporal.Now.zonedDateTimeISO("UTC");
 
@@ -97,6 +128,7 @@ const CalendarView = ({ courses = COURSES }: CalendarViewProps) => {
           instructor: course.instructor,
           spots: course.spots,
           image: course.image,
+          time: course.time,
           start: startZdt,
           end: endZdt,
           calendarId: course.type.toLowerCase(),
@@ -134,8 +166,15 @@ const CalendarView = ({ courses = COURSES }: CalendarViewProps) => {
         /* HIDE DEFAULT CONTENT */
         .sx__event-time, 
         .sx__event-title,
-        .sx__time-grid-event-inner > *:not(.sx__event-card-wrapper) { 
+        .sx__time-grid-event-inner > *:not(.sx__event-card-wrapper),
+        .sx__month-grid-event-inner > *:not(.sx__month-event-wrapper) { 
             display: none !important; 
+        }
+
+        .sx__month-grid-event {
+          background-color: transparent !important;
+          border: none !important;
+          padding: 2px 4px !important;
         }
 
         .sx__event {
@@ -231,7 +270,7 @@ const CalendarView = ({ courses = COURSES }: CalendarViewProps) => {
         calendarApp={calendarApp}
         customComponents={{
           timeGridEvent: CustomEvent,
-          monthGridEvent: CustomEvent
+          monthGridEvent: MonthEvent
         }}
       />
     </div>
