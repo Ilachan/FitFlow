@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 
+	fitdb "my-course-backend/db"
+
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
@@ -28,7 +30,8 @@ func hasColumn(db *gorm.DB, t, c string) bool {
 }
 
 func main() {
-	db, err := gorm.Open(sqlite.Open("homework.db"), &gorm.Config{})
+	dbPath := fitdb.ResolvedDBPath()
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}

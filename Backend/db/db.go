@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -13,7 +15,7 @@ var DB *gorm.DB
 
 func InitDB() {
 	var err error
-	dbPath := resolveDBPath()
+	dbPath := ResolvedDBPath()
 	// connect SQLite
 	DB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
@@ -29,20 +31,42 @@ func InitDB() {
 		DB.Exec("UPDATE Course SET end_time = end_time || ':00' WHERE end_time IS NOT NULL AND length(end_time) = 5;")
 	}
 
-	log.Println("Database connected and foreign keys enabled.")
+	log.Printf("Database connected and foreign keys enabled. Using %s", dbPath)
 }
 
-func resolveDBPath() string {
+func ResolvedDBPath() string {
+	if configured := strings.TrimSpace(os.Getenv("FITFLOW_DB_PATH")); configured != "" {
+		return absPathOrFallback(configured)
+	}
+
+	if backendRoot := backendRootFromSource(); backendRoot != "" {
+		return filepath.Join(backendRoot, "homework.db")
+	}
+
+	return resolveDBPathFromWorkingDirectory()
+}
+
+func backendRootFromSource() string {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return ""
+	}
+
+	backendRoot := filepath.Clean(filepath.Join(filepath.Dir(file), ".."))
+	return absPathOrFallback(backendRoot)
+}
+
+func resolveDBPathFromWorkingDirectory() string {
 	wd, err := os.Getwd()
 	if err != nil {
-		return "homework.db"
+		return absPathOrFallback("homework.db")
 	}
 
 	current := wd
 	for {
 		goModPath := filepath.Join(current, "go.mod")
 		if stat, statErr := os.Stat(goModPath); statErr == nil && !stat.IsDir() {
-			return filepath.Join(current, "homework.db")
+			return absPathOrFallback(filepath.Join(current, "homework.db"))
 		}
 
 		parent := filepath.Dir(current)
@@ -52,7 +76,15 @@ func resolveDBPath() string {
 		current = parent
 	}
 
-	return "homework.db"
+	return absPathOrFallback("homework.db")
+}
+
+func absPathOrFallback(path string) string {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	return absPath
 }
 
 func migrateUserInfoTable() {
