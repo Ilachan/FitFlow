@@ -14,6 +14,7 @@
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Installation](#installation)
+- [Backend Test Demo](#backend-test-demo)
 - [Usage](#usage)
 - [API Endpoints](#api-endpoints)
 - [Contributing](#contributing)
@@ -54,3 +55,32 @@
 1. Clone the repository:  
 ```bash
 git clone https://github.com/your-username/project-name.git
+```
+
+## Backend Test Demo
+
+Use these two files side by side during the demo:
+
+- `Backend/service/class_service_test.go` for business-logic tests
+- `Backend/routes/class_routes_test.go` for HTTP endpoint tests
+
+Recommended demo flow:
+
+1. Open the two test files side by side in VS Code.
+2. Show that the service tests cover enroll, drop, list classes, and analytics logic.
+3. Show that the route tests hit the real Gin endpoints and verify HTTP status codes plus JSON responses.
+4. Run the tests from the `Backend` folder.
+
+Commands:
+
+```bash
+go test ./service -v
+go test ./routes -v
+go test ./service ./routes -cover
+```
+
+Focused demo command:
+
+```bash
+go test ./service ./routes -run "Test(RegisterClass|DropClass|ListClassesPaged|GetUserAnalytics|RegisterClassEndpoint|DropClassEndpoint|ListClassesEndpoint|GetUserAnalyticsEndpoint)" -v
+```
