@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
@@ -11,16 +12,17 @@ import BackgroundBlobs from "../components/ui/BackgroundBlobs";
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
+  const [role, setRole] = useState<"student" | "manager">("student");
 
   const handleLogin = () => {
     // In a real app, you would make an API call here.
-    // fetch('/api/login', ...).then(res => res.json()).then(data => login(data.token))
+    // fetch('/api/login', ...).then(res => res.json()).then(data => login(data.token, data.role))
 
     const mockToken =
       "mock-jwt-token-" + Math.random().toString(36).substring(7);
-    login(mockToken);
+    login(mockToken, role);
     toast.success("Welcome back! Successfully logged in.");
-    navigate("/courses");
+    navigate("/");
   };
 
   return (
@@ -44,6 +46,30 @@ const Login = () => {
         </div>
 
         <div className="space-y-4">
+          {/* Role Selection */}
+          <div className="flex p-1 bg-slate-100 rounded-xl mb-6">
+            <button
+              onClick={() => setRole("student")}
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+                role === "student"
+                  ? "bg-white text-indigo-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Student
+            </button>
+            <button
+              onClick={() => setRole("manager")}
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+                role === "manager"
+                  ? "bg-white text-indigo-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Manager
+            </button>
+          </div>
+
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
               <Icons.Mail />
@@ -58,7 +84,7 @@ const Login = () => {
             <Input type="password" placeholder="Password" />
           </div>
 
-          <Button className="w-full py-3.5 text-lg" onClick={handleLogin}>
+          <Button className="w-full py-3.5 text-lg mt-2" onClick={handleLogin}>
             Sign In
           </Button>
         </div>
@@ -75,5 +101,6 @@ const Login = () => {
     </div>
   );
 };
+
 
 export default Login;

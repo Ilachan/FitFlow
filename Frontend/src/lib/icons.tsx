@@ -260,6 +260,21 @@ export const Icons = {
       />
     </svg>
   ),
+  Key: ({ className }: { className?: string }) => (
+    <svg
+      className={className || "w-5 h-5"}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M15 7a2 2 0 012 2m-2 4a2 2 0 01-2 2m2-2a2 2 0 012-2m-2 2h3m-3 3h3m-7.5 1h-7.5a2 2 0 01-2-2v-1a2 2 0 012-2h7.5m0 5a5 5 0 100-10 5 5 0 000 10z"
+      />
+    </svg>
+  ),
   Chart: ({ className }: { className?: string }) => (
     <svg
       className={className || "w-5 h-5"}
