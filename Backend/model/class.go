@@ -23,14 +23,13 @@ type Course struct {
 	Spot int `gorm:"-" json:"spot"`
 }
 
-// StudentEnrollment is the join table between User and Course.
-type StudentEnrollment struct {
-	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	StudentID uint      `gorm:"column:student_id;not null" json:"student_id"`
-	CourseID  uint      `gorm:"column:course_id;not null" json:"course_id"`
+// Enrollment is the join table between User and Course.
+type Enrollment struct {
+	ID       uint `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID   uint `gorm:"column:user_id;not null" json:"user_id"`
+	CourseID uint `gorm:"column:course_id;not null" json:"course_id"`
 
-	// NOTE: keep as your current design (recommended name: User)
-	User   User   `gorm:"foreignKey:StudentID" json:"user"`
+	User   User   `gorm:"foreignKey:UserID" json:"user"`
 	Course Course `gorm:"foreignKey:CourseID" json:"course"`
 
 	Status     string    `gorm:"column:status;not null" json:"status"`
@@ -41,10 +40,10 @@ func (Course) TableName() string {
 	return "Course"
 }
 
-func (StudentEnrollment) TableName() string {
-	return "StudentEnrollment"
+func (Enrollment) TableName() string {
+	return "Enrollment"
 }
 
-type StudentEnrollmentRequest struct {
+type EnrollmentRequest struct {
 	CourseID uint `json:"course_id" binding:"required"`
 }

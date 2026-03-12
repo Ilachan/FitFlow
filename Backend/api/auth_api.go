@@ -77,7 +77,7 @@ func GetProfile(c *gin.Context) {
 	}
 
 	// 3. Parse Token and Handle Expiration/Invalidity
-	userID, err := service.GetStudentIDFromToken(tokenString)
+	userID, err := service.ExtractUserIDFromToken(tokenString)
 	if err != nil {
 		errorMessage := err.Error()
 		if strings.Contains(errorMessage, "expired") {
@@ -92,7 +92,7 @@ func GetProfile(c *gin.Context) {
 	profile, err := service.GetUserProfile(userID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Detailed profile information could not be found for this student"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Detailed profile information could not be found for this user"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "A server-side error occurred while retrieving your profile"})
 		}
@@ -111,13 +111,13 @@ func UpdateProfile(c *gin.Context) {
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	userID, err := service.GetStudentIDFromToken(tokenString)
+	userID, err := service.ExtractUserIDFromToken(tokenString)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 		return
 	}
 
-	var input model.StudentProfile
+	var input model.UserProfile
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
 		return

@@ -44,25 +44,22 @@ func GetUserByEmail(email string) (*model.User, error) {
 	return &user, nil
 }
 
-// GetProfileByID fetches combined data from User and student_info
-func GetProfileByID(id uint) (*model.StudentProfile, error) {
-	var profile model.StudentProfile
+// GetUserProfileByID fetches combined data from User and user_info.
+func GetUserProfileByID(id uint) (*model.UserProfile, error) {
+	var profile model.UserProfile
 
-	// CHANGED: all "Student" table refs -> "User"
-	// NOTE: student_info table remains unchanged per your request.
 	err := db.DB.Table("User").
-		Select("User.name, User.email, User.avatar_url, student_info.date_of_birth, student_info.gender, student_info.phone_number, student_info.address").
-		Joins("left join student_info on student_info.student_id = User.id").
+		Select("User.name, User.email, User.avatar_url, user_info.date_of_birth, user_info.gender, user_info.phone_number, user_info.address").
+		Joins("left join user_info on user_info.user_id = User.id").
 		Where("User.id = ?", id).
 		Scan(&profile).Error
 
 	return &profile, err
 }
 
-// UpdateProfile updates both tables in a single transaction
-func UpdateProfile(id uint, p model.StudentProfile) error {
+// UpdateUserProfile updates both tables in a single transaction.
+func UpdateUserProfile(id uint, p model.UserProfile) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
-		// CHANGED: tx.Model(&model.Student{}) -> tx.Model(&model.User{})
 		if err := tx.Model(&model.User{}).Where("id = ?", id).Updates(map[string]interface{}{
 			"name":       p.Name,
 			"avatar_url": p.AvatarURL,
@@ -70,12 +67,11 @@ func UpdateProfile(id uint, p model.StudentProfile) error {
 			return err
 		}
 
-		// 2. Update or Create student_info table (unchanged)
-		var info model.StudentInfo
-		err := tx.Where("student_id = ?", id).First(&info).Error
+		var info model.UserInfo
+		err := tx.Where("user_id = ?", id).First(&info).Error
 
-		infoData := model.StudentInfo{
-			StudentID:   id,
+		infoData := model.UserInfo{
+			UserID:      id,
 			DateOfBirth: p.DateOfBirth,
 			Gender:      p.Gender,
 			PhoneNumber: p.PhoneNumber,

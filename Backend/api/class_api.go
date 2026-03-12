@@ -12,25 +12,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterClass registers a student for a course.
-// Auth required, and role_id must be 1/2/3.
+// RegisterClass enrolls the authenticated user in a course.
 func RegisterClass(c *gin.Context) {
-	var input model.StudentEnrollmentRequest
+	var input model.EnrollmentRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	studentID, err := requireRegisterPermission(c)
+	userID, err := requireRegisterPermission(c)
 	if err != nil {
 		return
 	}
 
-	if err := service.RegisterClass(studentID, input.CourseID); err != nil {
+	if err := service.RegisterClass(userID, input.CourseID); err != nil {
 		switch err.Error() {
-		case "student not found", "class not found":
+		case "user not found", "class not found":
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		case "registration already exists", "class is full":
+		case "enrollment already exists", "class is full":
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -38,25 +37,24 @@ func RegisterClass(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Class registered successfully"})
+	c.JSON(http.StatusCreated, gin.H{"message": "Class enrolled successfully"})
 }
 
-// DropClass removes a student from a course.
-// Auth required, and role_id must be 1/2/3.
+// DropClass removes the authenticated user's enrollment from a course.
 func DropClass(c *gin.Context) {
-	var input model.StudentEnrollmentRequest
+	var input model.EnrollmentRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	studentID, err := requireRegisterPermission(c)
+	userID, err := requireRegisterPermission(c)
 	if err != nil {
 		return
 	}
 
-	if err := service.DropClass(studentID, input.CourseID); err != nil {
-		if err.Error() == "registration not found" {
+	if err := service.DropClass(userID, input.CourseID); err != nil {
+		if err.Error() == "enrollment not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
@@ -64,7 +62,7 @@ func DropClass(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Class dropped successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Class unenrolled successfully"})
 }
 
 // ListClasses returns paginated courses. Public endpoint.
@@ -116,8 +114,12 @@ func GetClass(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"class": class})
 }
 
-// ListClassRegistrations returns all registrations for a class.
-func ListClassRegistrations(c *gin.Context) {
+// ListClassEnrollments returns all enrollments for a class.
+func ListClassEnrollments(c *gin.Context) {
+	if err := requireManagerRole(c); err != nil {
+		return
+	}
+
 	classIDStr := c.Param("id")
 	classID, err := strconv.ParseUint(classIDStr, 10, 32)
 	if err != nil {
@@ -125,7 +127,7 @@ func ListClassRegistrations(c *gin.Context) {
 		return
 	}
 
-	registrations, err := service.ListClassRegistrations(uint(classID))
+	enrollments, err := service.ListClassEnrollments(uint(classID))
 	if err != nil {
 		if err.Error() == "class not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -135,21 +137,32 @@ func ListClassRegistrations(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"registrations": registrations})
+	c.JSON(http.StatusOK, gin.H{"enrollments": enrollments})
 }
 
-// GetStudentEnrolledClasses returns all courses a student is enrolled in.
-func GetStudentEnrolledClasses(c *gin.Context) {
-	studentIDStr := c.Param("id")
-	studentID, err := strconv.ParseUint(studentIDStr, 10, 32)
+// GetUserEnrolledClasses returns all courses a user is enrolled in.
+func GetUserEnrolledClasses(c *gin.Context) {
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseUint(userIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
 		return
 	}
 
-	courses, err := service.GetStudentEnrolledClasses(uint(studentID))
+	authenticatedUserID, err := getUserIDFromAuthHeader(c)
 	if err != nil {
-		if err.Error() == "student not found" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	if authenticatedUserID != uint(userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden: you can only view your own enrollments"})
+		return
+	}
+
+	courses, err := service.GetUserEnrolledClasses(uint(userID))
+	if err != nil {
+		if err.Error() == "user not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
@@ -160,7 +173,42 @@ func GetStudentEnrolledClasses(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"courses": courses})
 }
 
-func getStudentIDFromAuthHeader(c *gin.Context) (uint, error) {
+// GetStudentAnalytics returns student dashboard analytics for 7d, 1m, or 3m.
+func GetUserAnalytics(c *gin.Context) {
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseUint(userIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+		return
+	}
+
+	authUserID, err := getUserIDFromAuthHeader(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	if uint(userID) != authUserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
+	rangeKey := strings.TrimSpace(c.DefaultQuery("range", "7d"))
+
+	analytics, err := service.GetUserAnalytics(authUserID, rangeKey)
+	if err != nil {
+		if err.Error() == "user not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"analytics": analytics})
+}
+
+func getUserIDFromAuthHeader(c *gin.Context) (uint, error) {
 	authorization := strings.TrimSpace(c.GetHeader("Authorization"))
 	if authorization == "" {
 		return 0, errors.New("missing authorization header")
@@ -176,7 +224,7 @@ func getStudentIDFromAuthHeader(c *gin.Context) (uint, error) {
 		return 0, errors.New("invalid authorization header")
 	}
 
-	return service.GetStudentIDFromToken(tokenString)
+	return service.ExtractUserIDFromToken(tokenString)
 }
 
 func getRoleIDFromAuthHeader(c *gin.Context) (uint, error) {
@@ -200,7 +248,7 @@ func getRoleIDFromAuthHeader(c *gin.Context) (uint, error) {
 
 // register/drop permission check
 func requireRegisterPermission(c *gin.Context) (uint, error) {
-	studentID, err := getStudentIDFromAuthHeader(c)
+	userID, err := getUserIDFromAuthHeader(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return 0, err
@@ -218,5 +266,5 @@ func requireRegisterPermission(c *gin.Context) (uint, error) {
 		return 0, errors.New("forbidden")
 	}
 
-	return studentID, nil
+	return userID, nil
 }

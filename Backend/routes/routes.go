@@ -29,15 +29,15 @@ func SetupRouter() *gin.Engine {
 	// Prefix: /auth
 	authRoutes := r.Group("/auth")
 	{
-    authRoutes.POST("/register", api.Register)
-	// CHANGED: SuperManager creates manager invite codes
-	authRoutes.POST("/manager/invite-codes", api.CreateManagerInviteCode)
-	authRoutes.POST("/manager/register", api.ManagerRegister)
-    authRoutes.POST("/login", api.Login)
-    
-    // New Profile Endpoints
-    authRoutes.GET("/profile", api.GetProfile)
-    authRoutes.PUT("/profile", api.UpdateProfile)
+		authRoutes.POST("/register", api.Register)
+		// CHANGED: SuperManager creates manager invite codes
+		authRoutes.POST("/manager/invite-codes", api.CreateManagerInviteCode)
+		authRoutes.POST("/manager/register", api.ManagerRegister)
+		authRoutes.POST("/login", api.Login)
+
+		// New Profile Endpoints
+		authRoutes.GET("/profile", api.GetProfile)
+		authRoutes.PUT("/profile", api.UpdateProfile)
 	}
 	// User Route Group
 	// Prefix: /users
@@ -45,27 +45,32 @@ func SetupRouter() *gin.Engine {
 	{
 		// DELETE /users/:id (e.g., /users/1)
 		userRoutes.DELETE("/:id", api.DeleteUser)
-		// GET /users/:id/enrollments (get student's enrolled courses)
-		userRoutes.GET("/:id/enrollments", api.GetStudentEnrolledClasses)
+		// GET /users/:id/enrollments (authenticated user can only get their own enrolled courses)
+		userRoutes.GET("/:id/enrollments", api.GetUserEnrolledClasses)
+		// GET /users/:id/enrollment-summary?days=30 (authenticated user can only get their own summary)
+		//userRoutes.GET("/:id/enrollment-summary", api.GetUserEnrollmentSummary)
+		// GET /users/:id/enrollment-summary/{7days|1mon|3mon}
+		userRoutes.GET("/:id/analytics", api.GetUserAnalytics)
 	}
 
 	// Class Route Group
 	// Prefix: /classes
 	classRoutes := r.Group("/classes")
 	{
-	// public
-	classRoutes.GET("", api.ListClasses)
-	classRoutes.GET("/:id", api.GetClass)
-	classRoutes.GET("/:id/registrations", api.ListClassRegistrations)
+		// public
+		classRoutes.GET("", api.ListClasses)
+		classRoutes.GET("/:id", api.GetClass)
+		// manager-only
+		classRoutes.GET("/:id/enrollments", api.ListClassEnrollments)
 
-	// student actions
-	classRoutes.POST("/register", api.RegisterClass)
-	classRoutes.POST("/drop", api.DropClass)
+		// enrollment actions
+		classRoutes.POST("/register", api.RegisterClass)
+		classRoutes.POST("/drop", api.DropClass)
 
-	// manager-only
-	classRoutes.POST("", api.ManagerCreateClass)
-	classRoutes.PUT("/:id", api.ManagerUpdateClass)
-	classRoutes.DELETE("/:id", api.ManagerDeleteClass)
+		// manager-only
+		classRoutes.POST("", api.ManagerCreateClass)
+		classRoutes.PUT("/:id", api.ManagerUpdateClass)
+		classRoutes.DELETE("/:id", api.ManagerDeleteClass)
 	}
 
 	// Note: Future Course Route Group can be added here...

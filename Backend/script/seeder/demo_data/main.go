@@ -5,14 +5,11 @@ import (
 
 	"my-course-backend/db"
 	"my-course-backend/model"
-	"my-course-backend/routes"
 )
 
 func main() {
-	// 1. Initialize Database
+	// Keep schema creation together with seeding for local demo setup.
 	db.InitDB()
-
-	// 2. Auto migrate only missing tables to avoid SQLite temp-table rebuild issues.
 	ensure := []struct {
 		tableName string
 		model     any
@@ -34,9 +31,8 @@ func main() {
 		}
 	}
 
-	// 3. Initialize Router
-	r := routes.SetupRouter()
-
-	// 4. Start Server
-	r.Run(":8080")
+	seedRoles()
+	seedUsers(3, 8, 25)
+	seedCourses(12)
+	seedEnrollments(420)
 }

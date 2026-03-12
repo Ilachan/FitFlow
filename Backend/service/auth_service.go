@@ -72,9 +72,8 @@ func LoginUser(input model.LoginInput) (string, error) {
 	return tokenString, nil
 }
 
-// GetStudentIDFromToken extracts the user ID from a JWT token string.
-// (function name kept to avoid touching other callers)
-func GetStudentIDFromToken(tokenString string) (uint, error) {
+// ExtractUserIDFromToken extracts the user ID from a JWT token string.
+func ExtractUserIDFromToken(tokenString string) (uint, error) {
 	claims := jwt.MapClaims{}
 	parsed, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil
@@ -98,6 +97,11 @@ func GetStudentIDFromToken(tokenString string) (uint, error) {
 	default:
 		return 0, errors.New("invalid token")
 	}
+}
+
+// GetStudentIDFromToken is kept as a compatibility wrapper for existing callers.
+func GetStudentIDFromToken(tokenString string) (uint, error) {
+	return ExtractUserIDFromToken(tokenString)
 }
 
 // CHANGED: new helper to extract role_id from token
@@ -131,12 +135,12 @@ func RemoveUser(id uint) error {
 	return dao.DeleteUserByID(id)
 }
 
-func GetUserProfile(id uint) (*model.StudentProfile, error) {
-	return dao.GetProfileByID(id)
+func GetUserProfile(id uint) (*model.UserProfile, error) {
+	return dao.GetUserProfileByID(id)
 }
 
-func UpdateUserProfile(id uint, input model.StudentProfile) error {
-	return dao.UpdateProfile(id, input)
+func UpdateUserProfile(id uint, input model.UserProfile) error {
+	return dao.UpdateUserProfile(id, input)
 }
 
 // CHANGED: LoginUserWithRole returns both token and role_id for frontend convenience.

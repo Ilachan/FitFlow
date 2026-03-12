@@ -2,14 +2,16 @@ package service
 
 import (
 	"errors"
+	"math"
 	"my-course-backend/dao"
 	"my-course-backend/model"
+	"time"
 )
 
-// RegisterClass registers a student for a course.
-func RegisterClass(studentID uint, courseID uint) error {
-	if _, err := dao.GetStudentByID(studentID); err != nil {
-		return errors.New("student not found")
+// RegisterClass enrolls a user in a course.
+func RegisterClass(userID uint, courseID uint) error {
+	if _, err := dao.GetUserByID(userID); err != nil {
+		return errors.New("user not found")
 	}
 
 	class, err := dao.GetCourseByID(courseID)
@@ -17,15 +19,15 @@ func RegisterClass(studentID uint, courseID uint) error {
 		return errors.New("class not found")
 	}
 
-	exists, err := dao.CheckRegistrationExists(studentID, courseID)
+	exists, err := dao.CheckEnrollmentExists(userID, courseID)
 	if err != nil {
 		return err
 	}
 	if exists {
-		return errors.New("registration already exists")
+		return errors.New("enrollment already exists")
 	}
 
-	count, err := dao.CountRegistrationsByClass(courseID)
+	count, err := dao.CountEnrollmentsByClass(courseID)
 	if err != nil {
 		return err
 	}
@@ -33,26 +35,35 @@ func RegisterClass(studentID uint, courseID uint) error {
 		return errors.New("class is full")
 	}
 
-	registration := model.StudentEnrollment{
-		StudentID: studentID,
-		CourseID:  courseID,
-		Status:    "registered",
+	enrollment := model.Enrollment{
+		UserID:   userID,
+		CourseID: courseID,
+		Status:   "registered",
 	}
-	return dao.CreateRegistration(&registration)
+	if err := dao.CreateEnrollment(&enrollment); err != nil {
+		return err
+	}
+
+	return dao.BackfillUserDailyActivityFromEnrollments(userID)
 }
 
-// DropClass removes a student's registration from a course.
-func DropClass(studentID uint, courseID uint) error {
-	return dao.DeleteRegistration(studentID, courseID)
+// DropClass removes a user's enrollment from a course.
+func DropClass(userID uint, courseID uint) error {
+	if err := dao.DeleteEnrollment(userID, courseID); err != nil {
+		return err
+	}
+
+	return dao.BackfillUserDailyActivityFromEnrollments(userID)
 }
 
-// ListClassRegistrations returns all registrations for a course.
-func ListClassRegistrations(courseID uint) ([]model.StudentEnrollment, error) {
+// ListClassEnrollments returns all enrollments for a course.
+func ListClassEnrollments(courseID uint) ([]model.Enrollment, error) {
 	if _, err := dao.GetCourseByID(courseID); err != nil {
 		return nil, errors.New("class not found")
 	}
-	return dao.ListRegistrationsByClass(courseID)
+	return dao.ListEnrollmentsByClass(courseID)
 }
+
 // CHANGED/NEW: ListClassesPaged returns paged result with spot filled.
 func ListClassesPaged(page int, pageSize int) ([]model.Course, int64, error) {
 	if page < 1 {
@@ -79,7 +90,7 @@ func ListClassesPaged(page int, pageSize int) ([]model.Course, int64, error) {
 }
 
 func fillCourseSpot(class *model.Course) error {
-	count, err := dao.CountRegistrationsByClass(class.ID)
+	count, err := dao.CountEnrollmentsByClass(class.ID)
 	if err != nil {
 		return err
 	}
@@ -117,19 +128,17 @@ func GetClass(courseID uint) (*model.Course, error) {
 	return class, nil
 }
 
-// GetStudentEnrolledClasses returns all courses a student is enrolled in with spot populated.
-func GetStudentEnrolledClasses(studentID uint) ([]model.Course, error) {
-	// Verify student exists
-	if _, err := dao.GetStudentByID(studentID); err != nil {
-		return nil, errors.New("student not found")
+// GetUserEnrolledClasses returns all courses a user is enrolled in with spot populated.
+func GetUserEnrolledClasses(userID uint) ([]model.Course, error) {
+	if _, err := dao.GetUserByID(userID); err != nil {
+		return nil, errors.New("user not found")
 	}
 
-	courses, err := dao.ListEnrolledCoursesByStudent(studentID)
+	courses, err := dao.ListEnrolledCoursesByUser(userID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Populate spot for each course
 	for i := range courses {
 		if err := fillCourseSpot(&courses[i]); err != nil {
 			return nil, err
@@ -137,4 +146,77 @@ func GetStudentEnrolledClasses(studentID uint) ([]model.Course, error) {
 	}
 
 	return courses, nil
+}
+
+// GetStudentAnalytics returns dashboard analytics for a date range.
+func GetUserAnalytics(userID uint, rangeKey string) (*model.UserAnalyticsResponse, error) {
+	if _, err := dao.GetUserByID(userID); err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	if err := dao.BackfillUserDailyActivityFromEnrollments(userID); err != nil {
+		return nil, err
+	}
+
+	toDate := time.Now()
+	fromDate := resolveRangeStart(rangeKey, toDate)
+
+	totalClasses, activeDays, err := dao.GetUserActivityStats(userID, fromDate, toDate)
+	if err != nil {
+		return nil, err
+	}
+
+	daily, err := dao.GetUserDailyActivitySummary(userID, fromDate, toDate)
+	if err != nil {
+		return nil, err
+	}
+
+	categories, err := dao.GetUserCategoryActivitySummary(userID, fromDate, toDate)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range categories {
+		if totalClasses <= 0 {
+			categories[i].Percentage = 0
+			continue
+		}
+		percentage := (float64(categories[i].Classes) / float64(totalClasses)) * 100
+		categories[i].Percentage = math.Round(percentage*100) / 100
+	}
+
+	response := &model.UserAnalyticsResponse{
+		UserID:       userID,
+		Range:        normalizeRangeKey(rangeKey),
+		FromDate:     fromDate.Format("2006-01-02"),
+		ToDate:       toDate.Format("2006-01-02"),
+		TotalClasses: totalClasses,
+		ActiveDays:   activeDays,
+		Daily:        daily,
+		Categories:   categories,
+	}
+
+	return response, nil
+}
+
+func resolveRangeStart(rangeKey string, now time.Time) time.Time {
+	key := normalizeRangeKey(rangeKey)
+
+	switch key {
+	case "1m":
+		return now.AddDate(0, -1, 0)
+	case "3m":
+		return now.AddDate(0, -3, 0)
+	default:
+		return now.AddDate(0, 0, -7)
+	}
+}
+
+func normalizeRangeKey(rangeKey string) string {
+	switch rangeKey {
+	case "1m", "3m":
+		return rangeKey
+	default:
+		return "7d"
+	}
 }

@@ -15,14 +15,13 @@ type User struct {
 	Email     string    `gorm:"unique;not null" json:"email"`
 	Password  string    `gorm:"not null" json:"-"` // json:"-" ensures the password is never returned in the API response
 	AvatarURL string    `json:"avatar_url"`
-	RoleID    uint      `json:"role_id"`                          // Foreign Key
-	Role      Role      `gorm:"foreignKey:RoleID" json:"role"`    // Association (Belongs To)
+	RoleID    uint      `json:"role_id"`                       // Foreign Key
+	Role      Role      `gorm:"foreignKey:RoleID" json:"role"` // Association (Belongs To)
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// StudentProfile represents the combined data from Student and student_info tables
-// NOTE: unchanged on purpose - only Student table renamed per your request.
-type StudentProfile struct {
+// UserProfile represents the combined data from User and user_info tables.
+type UserProfile struct {
 	Name        string `json:"name"`
 	Email       string `json:"email"` // Usually read-only in profile updates
 	AvatarURL   string `json:"avatar_url"`
@@ -32,19 +31,18 @@ type StudentProfile struct {
 	Address     string `json:"address"`
 }
 
-// StudentInfo matches your SQL student_info table structure
-// NOTE: unchanged on purpose - only Student table renamed per your request.
-type StudentInfo struct {
+// UserInfo matches the user_info table structure.
+type UserInfo struct {
 	ID          uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	StudentID   uint   `gorm:"unique;not null" json:"student_id"`
+	UserID      uint   `gorm:"unique;not null" json:"user_id"`
 	DateOfBirth string `json:"date_of_birth"`
 	Gender      string `json:"gender"`
 	PhoneNumber string `json:"phone_number"`
 	Address     string `json:"address"`
 }
 
-func (StudentInfo) TableName() string {
-	return "student_info"
+func (UserInfo) TableName() string {
+	return "user_info"
 }
 
 // CHANGED: TableName now points to "User"
