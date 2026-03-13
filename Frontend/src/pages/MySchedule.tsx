@@ -25,7 +25,7 @@ import {
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
 
-type TimeRange = "7days" | "30days" | "90days";
+type TimeRange = "7d" | "1m" | "3m";
 
 type ScheduleCourse = {
   id: number;
@@ -40,6 +40,12 @@ const BRAND_COLORS = [
   "var(--color-brand-rose)",
   "var(--color-brand-amber)",
 ];
+
+const TIME_RANGE_LABELS: Record<TimeRange, string> = {
+  "7d": "Last 7 Days",
+  "1m": "Last Month",
+  "3m": "Last 3 Months",
+};
 
 const normalizeWeekday = (weekday: string) => {
   const day = (weekday || "").trim();
@@ -65,13 +71,7 @@ const mapClassToSchedule = (course: BackendClass): ScheduleCourse => ({
 });
 
 const toBackendRange = (timeRange: TimeRange): "7d" | "1m" | "3m" => {
-  if (timeRange === "30days") {
-    return "1m";
-  }
-  if (timeRange === "90days") {
-    return "3m";
-  }
-  return "7d";
+  return timeRange;
 };
 
 const MySchedule = () => {
@@ -79,7 +79,7 @@ const MySchedule = () => {
   const [activeTab, setActiveTab] = useState<"upcoming" | "history">(
     "upcoming",
   );
-  const [timeRange, setTimeRange] = useState<TimeRange>("30days");
+  const [timeRange, setTimeRange] = useState<TimeRange>("1m");
   const [loading, setLoading] = useState(true);
   const [dropping, setDropping] = useState(false);
   const [upcomingCourses, setUpcomingCourses] = useState<ScheduleCourse[]>([]);
@@ -133,7 +133,7 @@ const MySchedule = () => {
   const frequencyData = useMemo(() => {
     const daily = analytics?.daily || [];
 
-    if (timeRange === "90days") {
+    if (timeRange === "3m") {
       const monthTotals: Record<string, number> = {};
       daily.forEach((item) => {
         const label = format(parseISO(item.date), "MMM");
@@ -147,7 +147,7 @@ const MySchedule = () => {
     }
 
     return daily.map((item) => ({
-      label: format(parseISO(item.date), timeRange === "week" ? "EEE" : "d"),
+      label: format(parseISO(item.date), timeRange === "7d" ? "EEE" : "d"),
       count: item.classes,
       date: item.date,
     }));
@@ -276,9 +276,9 @@ const MySchedule = () => {
                 onChange={(e) => setTimeRange(e.target.value as TimeRange)}
                 className="appearance-none bg-white border border-slate-200 rounded-lg px-4 py-2 pr-8 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
               >
-                <option value="7days">Last 7 Days</option>
-                <option value="30days">Last 30 Days</option>
-                <option value="90days">Last 90 Days</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="1m">Last Month</option>
+                <option value="3m">Last 3 Months</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-400">
                 <Icons.ChevronDown />
@@ -314,7 +314,7 @@ const MySchedule = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="p-6">
               <h4 className="text-sm font-bold text-slate-800 mb-4">
-                Activity Frequency ({timeRange})
+                Activity Frequency ({TIME_RANGE_LABELS[timeRange]})
               </h4>
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
