@@ -7,6 +7,13 @@ import { Icons } from "../lib/icons";
 import { useAuthStore } from "../store/authStore";
 import BackgroundBlobs from "../components/ui/BackgroundBlobs";
 import toast from "react-hot-toast";
+import {
+  extractUserIdFromToken,
+  loginRequest,
+  registerManagerRequest,
+  registerStudentRequest,
+  roleIdToFrontendRole,
+} from "../lib/api";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -18,8 +25,13 @@ const Register = () => {
     email: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
+    if (loading) {
+      return;
+    }
+
     if (!formData.fullName || !formData.email || !formData.password) {
       toast.error("Please fill in all fields.");
       return;
@@ -30,24 +42,33 @@ const Register = () => {
       return;
     }
 
-    // Mock invitation code validation
-    if (role === "manager" && invitationCode !== "FITFLOW2026") {
-      toast.error("Invalid invitation code.");
-      return;
+    setLoading(true);
+    try {
+      if (role === "manager") {
+        await registerManagerRequest(
+          formData.fullName,
+          formData.email,
+          formData.password,
+          invitationCode,
+        );
+      } else {
+        await registerStudentRequest(formData.fullName, formData.email, formData.password);
+      }
+
+      // Keep existing UX: auto-login immediately after successful registration.
+      const loginData = await loginRequest(formData.email, formData.password);
+      const frontendRole = roleIdToFrontendRole(loginData.role_id);
+      const userId = extractUserIdFromToken(loginData.token);
+
+      login(loginData.token, frontendRole, userId);
+      toast.success("Registration successful! Welcome to FitFlow.");
+      navigate("/");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Registration failed";
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
-
-    // In a real app, you would make an API call to register here.
-    // fetch('/api/register', { method: 'POST', body: JSON.stringify({ ...formData, role, invitationCode }) })
-
-    // Mock registration + auto-login
-    const mockToken =
-      "mock-jwt-token-" + Math.random().toString(36).substring(7);
-    login(mockToken, role);
-
-    toast.success("Registration successful! Welcome to FitFlow.");
-
-    // Redirect to dashboard after successful registration
-    navigate("/");
   };
 
   return (
@@ -156,7 +177,7 @@ const Register = () => {
           )}
 
           <Button className="w-full py-3.5 text-lg mt-2" onClick={handleRegister}>
-            Create Account
+            {loading ? "Creating Account..." : "Create Account"}
           </Button>
         </div>
 
