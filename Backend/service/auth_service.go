@@ -10,13 +10,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Secret key for JWT signing.
-// WARNING: In a production environment, store this in environment variables (e.g., os.Getenv("JWT_SECRET")), DO NOT hardcode it here.
 var jwtSecret = []byte("my_super_secret_key_2026")
 
-// ==========================================
-// 1. Registration Logic (RegisterUser)
-// ==========================================
 func RegisterUser(input model.RegisterInput) error {
 	if dao.CheckEmailExist(input.Email) {
 		return errors.New("email already exists")
@@ -32,7 +27,6 @@ func RegisterUser(input model.RegisterInput) error {
 		return errors.New("role 'Student' not found in database")
 	}
 
-	// NOTE: assumes you've already renamed Student model to User in your codebase
 	user := model.User{
 		Name:     input.Name,
 		Email:    input.Email,
@@ -43,9 +37,6 @@ func RegisterUser(input model.RegisterInput) error {
 	return dao.CreateUser(&user)
 }
 
-// ==========================================
-// 2. Login Logic (LoginUser)
-// ==========================================
 func LoginUser(input model.LoginInput) (string, error) {
 	user, err := dao.GetUserByEmail(input.Email)
 	if err != nil {
@@ -72,7 +63,6 @@ func LoginUser(input model.LoginInput) (string, error) {
 	return tokenString, nil
 }
 
-// ExtractUserIDFromToken extracts the user ID from a JWT token string.
 func ExtractUserIDFromToken(tokenString string) (uint, error) {
 	claims := jwt.MapClaims{}
 	parsed, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -99,12 +89,10 @@ func ExtractUserIDFromToken(tokenString string) (uint, error) {
 	}
 }
 
-// GetStudentIDFromToken is kept as a compatibility wrapper for existing callers.
 func GetStudentIDFromToken(tokenString string) (uint, error) {
 	return ExtractUserIDFromToken(tokenString)
 }
 
-// CHANGED: new helper to extract role_id from token
 func GetRoleIDFromToken(tokenString string) (uint, error) {
 	claims := jwt.MapClaims{}
 	parsed, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -139,11 +127,11 @@ func GetUserProfile(id uint) (*model.UserProfile, error) {
 	return dao.GetUserProfileByID(id)
 }
 
-func UpdateUserProfile(id uint, input model.UserProfile) error {
-	return dao.UpdateUserProfile(id, input)
+// New: Patch update with undefined vs null distinction.
+func UpdateUserProfilePatch(id uint, patch model.UserProfilePatch) error {
+	return dao.UpdateUserProfilePatch(id, patch)
 }
 
-// CHANGED: LoginUserWithRole returns both token and role_id for frontend convenience.
 func LoginUserWithRole(input model.LoginInput) (string, uint, error) {
 	user, err := dao.GetUserByEmail(input.Email)
 	if err != nil {

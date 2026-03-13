@@ -1,11 +1,11 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 
-	// Ensure these match your go.mod module name
 	"my-course-backend/model"
 	"my-course-backend/service"
 
@@ -16,18 +16,15 @@ import (
 func Register(c *gin.Context) {
 	var input model.RegisterInput
 
-	// 400: Validation error (e.g., missing fields, invalid email format)
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data: " + err.Error()})
 		return
 	}
 
 	if err := service.RegisterUser(input); err != nil {
-		// 409: Conflict (Email already exists)
 		if err.Error() == "email already exists" {
 			c.JSON(http.StatusConflict, gin.H{"error": "This email is already registered"})
 		} else {
-			// 500: Internal Server Error
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Registration failed: " + err.Error()})
 		}
 		return
@@ -36,7 +33,7 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Registration successful"})
 }
 
-// CHANGED: Login now returns role_id in response.
+// Login now returns role_id in response.
 func Login(c *gin.Context) {
 	var input model.LoginInput
 
@@ -54,29 +51,24 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",
 		"token":   token,
-		"role_id": roleID, 
+		"role_id": roleID,
 	})
 }
 
 // GetProfile handles GET /auth/profile by manually verifying the JWT
 func GetProfile(c *gin.Context) {
-	// 1. Check for Authorization Header
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
-		// 401: Client didn't provide credentials
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
 		return
 	}
 
-	// 2. Validate Bearer Token Format
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 	if tokenString == authHeader {
-		// 400: The request was formed incorrectly
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Malformed token. Please use 'Bearer <token>' format"})
 		return
 	}
 
-	// 3. Parse Token and Handle Expiration/Invalidity
 	userID, err := service.ExtractUserIDFromToken(tokenString)
 	if err != nil {
 		errorMessage := err.Error()
@@ -88,7 +80,6 @@ func GetProfile(c *gin.Context) {
 		return
 	}
 
-	// 4. Fetch the Profile from Database
 	profile, err := service.GetUserProfile(userID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -117,14 +108,63 @@ func UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	var input model.UserProfile
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
+	// Use RawMessage map to distinguish:
+	// - missing key (undefined)
+	// - key with null
+	// - key with actual string
+	var body map[string]*json.RawMessage
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
 		return
 	}
 
-	if err := service.UpdateUserProfile(userID, input); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database update failed"})
+	parsePatchString := func(key string) (model.PatchString, error) {
+		raw, ok := body[key]
+		if !ok {
+			return model.PatchString{Set: false}, nil // undefined => don't update
+		}
+
+		// key exists
+		if raw == nil || string(*raw) == "null" {
+			return model.PatchString{Set: true, Valid: false}, nil // explicit null
+		}
+
+		var val string
+		if err := json.Unmarshal(*raw, &val); err != nil {
+			return model.PatchString{}, err
+		}
+		return model.PatchString{Set: true, Valid: true, Value: val}, nil
+	}
+
+	var patch model.UserProfilePatch
+
+	if patch.Name, err = parsePatchString("name"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid field: name"})
+		return
+	}
+	if patch.AvatarURL, err = parsePatchString("avatar_url"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid field: avatar_url"})
+		return
+	}
+	if patch.Gender, err = parsePatchString("gender"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid field: gender"})
+		return
+	}
+	if patch.PhoneNumber, err = parsePatchString("phone_number"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid field: phone_number"})
+		return
+	}
+	if patch.Address, err = parsePatchString("address"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid field: address"})
+		return
+	}
+	if patch.DateOfBirth, err = parsePatchString("date_of_birth"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid field: date_of_birth"})
+		return
+	}
+
+	if err := service.UpdateUserProfilePatch(userID, patch); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database update failed: " + err.Error()})
 		return
 	}
 
