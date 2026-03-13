@@ -248,6 +248,15 @@ func TestGetUserAnalytics_SuccessWithPercentages(t *testing.T) {
 	courseCardio1 := seedCourse(t, "Run", 10, "Cardio")
 	courseCardio2 := seedCourse(t, "Bike", 10, "Cardio")
 	courseNoCategory := seedCourse(t, "Stretch", 10, "")
+	if err := db.DB.Model(&model.Course{}).Where("id = ?", courseCardio1.ID).Update("duration", 45).Error; err != nil {
+		t.Fatalf("failed to set courseCardio1 duration: %v", err)
+	}
+	if err := db.DB.Model(&model.Course{}).Where("id = ?", courseCardio2.ID).Update("duration", 60).Error; err != nil {
+		t.Fatalf("failed to set courseCardio2 duration: %v", err)
+	}
+	if err := db.DB.Model(&model.Course{}).Where("id = ?", courseNoCategory.ID).Update("duration", 30).Error; err != nil {
+		t.Fatalf("failed to set courseNoCategory duration: %v", err)
+	}
 
 	now := time.Now()
 	seedEnrollmentAt(t, user.ID, courseCardio1.ID, "registered", now.AddDate(0, 0, -1))
@@ -261,6 +270,9 @@ func TestGetUserAnalytics_SuccessWithPercentages(t *testing.T) {
 
 	if analytics.TotalClasses != 3 {
 		t.Fatalf("expected total classes 3, got %d", analytics.TotalClasses)
+	}
+	if analytics.TotalTime != 135 {
+		t.Fatalf("expected total time 135, got %d", analytics.TotalTime)
 	}
 	if analytics.ActiveDays != 3 {
 		t.Fatalf("expected active days 3, got %d", analytics.ActiveDays)

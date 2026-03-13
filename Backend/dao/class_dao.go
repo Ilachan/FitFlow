@@ -174,6 +174,25 @@ func GetUserActivityStats(userID uint, fromDate time.Time, toDate time.Time) (in
 	return result.TotalClasses, result.ActiveDays, nil
 }
 
+// GetUserTotalTime returns the summed class duration (minutes) in a date range.
+func GetUserTotalTime(userID uint, fromDate time.Time, toDate time.Time) (int64, error) {
+	type totalTimeResult struct {
+		TotalTime int64
+	}
+
+	var result totalTimeResult
+	err := db.DB.Table("UserDailyActivity AS uda").
+		Select("COALESCE(SUM(COALESCE(c.duration, 0)), 0) AS total_time").
+		Joins("INNER JOIN Course c ON c.id = uda.course_id").
+		Where("uda.user_id = ? AND uda.activity_date BETWEEN ? AND ?", userID, fromDate.Format("2006-01-02"), toDate.Format("2006-01-02")).
+		Scan(&result).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return result.TotalTime, nil
+}
+
 // GetUserDailyActivitySummary returns grouped daily analytics for the user.
 func GetUserDailyActivitySummary(userID uint, fromDate time.Time, toDate time.Time) ([]model.DailyActivitySummary, error) {
 	var daily []model.DailyActivitySummary

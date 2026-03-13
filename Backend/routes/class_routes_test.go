@@ -318,6 +318,12 @@ func TestGetUserAnalyticsEndpoint_OK(t *testing.T) {
 	user := seedRouteUser(t, 1, "secret123")
 	courseA := seedRouteCourse(t, "Run", 10, "Cardio")
 	courseB := seedRouteCourse(t, "Stretch", 10, "")
+	if err := db.DB.Model(&model.Course{}).Where("id = ?", courseA.ID).Update("duration", 45).Error; err != nil {
+		t.Fatalf("failed to set courseA duration: %v", err)
+	}
+	if err := db.DB.Model(&model.Course{}).Where("id = ?", courseB.ID).Update("duration", 30).Error; err != nil {
+		t.Fatalf("failed to set courseB duration: %v", err)
+	}
 	now := time.Now()
 	seedRouteEnrollmentAt(t, user.ID, courseA.ID, "registered", now.AddDate(0, 0, -1))
 	seedRouteEnrollmentAt(t, user.ID, courseB.ID, "registered", now.AddDate(0, 0, -2))
@@ -342,6 +348,9 @@ func TestGetUserAnalyticsEndpoint_OK(t *testing.T) {
 	}
 	if response.Analytics.TotalClasses != 2 {
 		t.Fatalf("expected total classes 2, got %d", response.Analytics.TotalClasses)
+	}
+	if response.Analytics.TotalTime != 75 {
+		t.Fatalf("expected total time 75, got %d", response.Analytics.TotalTime)
 	}
 	if response.Analytics.ActiveDays != 2 {
 		t.Fatalf("expected active days 2, got %d", response.Analytics.ActiveDays)

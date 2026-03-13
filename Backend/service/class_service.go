@@ -166,6 +166,11 @@ func GetUserAnalytics(userID uint, rangeKey string) (*model.UserAnalyticsRespons
 		return nil, err
 	}
 
+	totalTime, err := dao.GetUserTotalTime(userID, fromDate, toDate)
+	if err != nil {
+		return nil, err
+	}
+
 	daily, err := dao.GetUserDailyActivitySummary(userID, fromDate, toDate)
 	if err != nil {
 		return nil, err
@@ -191,6 +196,7 @@ func GetUserAnalytics(userID uint, rangeKey string) (*model.UserAnalyticsRespons
 		FromDate:     fromDate.Format("2006-01-02"),
 		ToDate:       toDate.Format("2006-01-02"),
 		TotalClasses: totalClasses,
+		TotalTime:    totalTime,
 		ActiveDays:   activeDays,
 		Daily:        daily,
 		Categories:   categories,

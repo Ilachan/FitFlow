@@ -38,6 +38,7 @@ type UserAnalyticsResponse struct {
 	FromDate     string                    `json:"from_date"`
 	ToDate       string                    `json:"to_date"`
 	TotalClasses int64                     `json:"total_classes"`
+	TotalTime    int64                     `json:"total_time"`
 	ActiveDays   int64                     `json:"active_days"`
 	Daily        []DailyActivitySummary    `json:"daily"`
 	Categories   []CategoryActivitySummary `json:"categories"`
