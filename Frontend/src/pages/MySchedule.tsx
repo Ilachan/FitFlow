@@ -25,7 +25,7 @@ import {
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
 
-type TimeRange = "week" | "month" | "3months";
+type TimeRange = "7days" | "30days" | "90days";
 
 type ScheduleCourse = {
   id: number;
@@ -65,10 +65,10 @@ const mapClassToSchedule = (course: BackendClass): ScheduleCourse => ({
 });
 
 const toBackendRange = (timeRange: TimeRange): "7d" | "1m" | "3m" => {
-  if (timeRange === "month") {
+  if (timeRange === "30days") {
     return "1m";
   }
-  if (timeRange === "3months") {
+  if (timeRange === "90days") {
     return "3m";
   }
   return "7d";
@@ -79,7 +79,7 @@ const MySchedule = () => {
   const [activeTab, setActiveTab] = useState<"upcoming" | "history">(
     "upcoming",
   );
-  const [timeRange, setTimeRange] = useState<TimeRange>("month");
+  const [timeRange, setTimeRange] = useState<TimeRange>("30days");
   const [loading, setLoading] = useState(true);
   const [dropping, setDropping] = useState(false);
   const [upcomingCourses, setUpcomingCourses] = useState<ScheduleCourse[]>([]);
@@ -133,7 +133,7 @@ const MySchedule = () => {
   const frequencyData = useMemo(() => {
     const daily = analytics?.daily || [];
 
-    if (timeRange === "3months") {
+    if (timeRange === "90days") {
       const monthTotals: Record<string, number> = {};
       daily.forEach((item) => {
         const label = format(parseISO(item.date), "MMM");
@@ -276,9 +276,9 @@ const MySchedule = () => {
                 onChange={(e) => setTimeRange(e.target.value as TimeRange)}
                 className="appearance-none bg-white border border-slate-200 rounded-lg px-4 py-2 pr-8 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
               >
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-                <option value="3months">Last 3 Months</option>
+                <option value="7days">Last 7 Days</option>
+                <option value="30days">Last 30 Days</option>
+                <option value="90days">Last 90 Days</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-400">
                 <Icons.ChevronDown />
