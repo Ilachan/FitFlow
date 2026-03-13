@@ -17,7 +17,6 @@ import BackgroundBlobs from "../components/ui/BackgroundBlobs";
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  const [role, setRole] = useState<"student" | "manager">("student");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -72,30 +71,6 @@ const Login = () => {
         </div>
 
         <div className="space-y-4">
-          {/* Role Selection */}
-          <div className="flex p-1 bg-slate-100 rounded-xl mb-6">
-            <button
-              onClick={() => setRole("student")}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                role === "student"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Student
-            </button>
-            <button
-              onClick={() => setRole("manager")}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                role === "manager"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Manager
-            </button>
-          </div>
-
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
               <Icons.Mail />
@@ -104,7 +79,9 @@ const Login = () => {
               type="email"
               placeholder="Email Address"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
             />
           </div>
 
@@ -116,7 +93,9 @@ const Login = () => {
               type="password"
               placeholder="Password"
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
             />
           </div>
 
