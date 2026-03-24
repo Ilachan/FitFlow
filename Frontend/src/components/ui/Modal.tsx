@@ -28,11 +28,8 @@ const Modal = ({ isOpen, onClose, children }: ModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
-        className="fixed inset-0 cursor-pointer" 
-        onClick={onClose} 
-      />
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="fixed inset-0 cursor-pointer" onClick={onClose} />
       <Card className="max-w-md w-full p-0 overflow-hidden relative z-10 animate-in zoom-in-95 duration-200 shadow-2xl ring-1 ring-slate-200/50">
         <button
           onClick={onClose}
