@@ -18,7 +18,7 @@ It does not modify `Sprint 2.md` and is intended for later merge.
 
 - Added profile field-level validation and inline error messages.
 - Added avatar URL input and live avatar preview with fallback image.
-- Added phone input formatting and validation (`+1 (XXX) XXX-XXXX`).
+- Added phone input formatting and validation (`(XXX) XXX-XXXX`).
 - Added date of birth age validation (minimum age 13).
 - Added save confirmation modal before profile update.
 - Added cancel changes action to restore last loaded profile state.
@@ -62,10 +62,15 @@ It does not modify `Sprint 2.md` and is intended for later merge.
   - Empty submit shows required field errors
   - Password strength indicator updates when user types
 
+- `src/pages/Profile.test.tsx`
+  - Invalid avatar URL blocks save and shows inline validation
+  - Cancel changes restores original profile values
+  - Save confirmation flow calls profile update API on confirm
+
 ### Test Execution Result
 
-- Test files: 3 passed
-- Tests: 10 passed
+- Test files: 4 passed
+- Tests: 13 passed
 
 ### Commands Used
 

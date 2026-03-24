@@ -9,7 +9,7 @@ export type PasswordStrength = "weak" | "medium" | "strong";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const AVATAR_URL_REGEX = /^https?:\/\/.+/i;
-const PHONE_US_REGEX = /^\+1 \(\d{3}\) \d{3}-\d{4}$/;
+const PHONE_US_REGEX = /^\(\d{3}\) \d{3}-\d{4}$/;
 
 export const validateEmail = (email: string): boolean => {
   return EMAIL_REGEX.test(email.trim());
@@ -54,11 +54,7 @@ export const getPasswordStrength = (password: string): PasswordStrength => {
 };
 
 export const formatPhoneNumberUS = (input: string): string => {
-  const digits = input.replace(/\D/g, "").slice(0, 11);
-
-  const normalized = digits.length === 11 && digits.startsWith("1")
-    ? digits.slice(1)
-    : digits;
+  const normalized = input.replace(/\D/g, "").slice(0, 10);
 
   if (!normalized) {
     return "";
@@ -69,14 +65,14 @@ export const formatPhoneNumberUS = (input: string): string => {
   const line = normalized.slice(6, 10);
 
   if (normalized.length <= 3) {
-    return `+1 (${area}`;
+    return `(${area}`;
   }
 
   if (normalized.length <= 6) {
-    return `+1 (${area}) ${exchange}`;
+    return `(${area}) ${exchange}`;
   }
 
-  return `+1 (${area}) ${line ? `${exchange}-${line}` : exchange}`;
+  return `(${area}) ${line ? `${exchange}-${line}` : exchange}`;
 };
 
 export const isValidPhoneNumberUS = (phone: string): boolean => {

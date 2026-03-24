@@ -85,7 +85,7 @@ const Profile = () => {
       }
 
       if (field === "phone_number" && !isValidPhoneNumberUS(value)) {
-        return "Phone number must match +1 (XXX) XXX-XXXX.";
+        return "Phone number must match (XXX) XXX-XXXX.";
       }
 
       if (field === "date_of_birth") {
@@ -105,7 +105,10 @@ const Profile = () => {
       email: validateSingleField("email", formData.email),
       avatar_url: validateSingleField("avatar_url", formData.avatar_url),
       phone_number: validateSingleField("phone_number", formData.phone_number),
-      date_of_birth: validateSingleField("date_of_birth", formData.date_of_birth),
+      date_of_birth: validateSingleField(
+        "date_of_birth",
+        formData.date_of_birth,
+      ),
     };
 
     const compactErrors = Object.fromEntries(
@@ -415,7 +418,9 @@ const Profile = () => {
                   onChange={handleChange}
                 />
                 {errors.date_of_birth && (
-                  <p className="text-xs text-rose-500">{errors.date_of_birth}</p>
+                  <p className="text-xs text-rose-500">
+                    {errors.date_of_birth}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
@@ -443,7 +448,7 @@ const Profile = () => {
                   name="phone_number"
                   value={formData.phone_number}
                   onChange={handleChange}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="(555) 000-0000"
                 />
                 {errors.phone_number && (
                   <p className="text-xs text-rose-500">{errors.phone_number}</p>
@@ -476,17 +481,19 @@ const Profile = () => {
         </div>
       </div>
 
-      <Modal
-        isOpen={showConfirmSave}
-        onClose={() => setShowConfirmSave(false)}
-      >
+      <Modal isOpen={showConfirmSave} onClose={() => setShowConfirmSave(false)}>
         <div className="p-6">
-          <h3 className="text-lg font-bold text-slate-900">Confirm Profile Update</h3>
+          <h3 className="text-lg font-bold text-slate-900">
+            Confirm Profile Update
+          </h3>
           <p className="text-sm text-slate-500 mt-2">
             Are you sure you want to save these changes to your profile?
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <Button variant="secondary" onClick={() => setShowConfirmSave(false)}>
+            <Button
+              variant="secondary"
+              onClick={() => setShowConfirmSave(false)}
+            >
               Cancel
             </Button>
             <Button

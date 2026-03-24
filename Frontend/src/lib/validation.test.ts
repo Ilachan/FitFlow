@@ -37,8 +37,8 @@ describe("validation utilities", () => {
   });
 
   it("formats and validates US phone numbers", () => {
-    expect(formatPhoneNumberUS("1234567890")).toBe("+1 (123) 456-7890");
-    expect(isValidPhoneNumberUS("+1 (123) 456-7890")).toBe(true);
+    expect(formatPhoneNumberUS("1234567890")).toBe("(123) 456-7890");
+    expect(isValidPhoneNumberUS("(123) 456-7890")).toBe(true);
     expect(isValidPhoneNumberUS("123-456-7890")).toBe(false);
   });
 
