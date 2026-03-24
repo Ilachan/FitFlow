@@ -4,6 +4,7 @@ import {
   createViewMonthGrid,
   createViewWeek,
   createViewDay,
+  type CalendarEventExternal,
 } from "@schedule-x/calendar";
 import { Temporal } from "temporal-polyfill";
 import "@schedule-x/theme-default/dist/index.css";
@@ -24,7 +25,23 @@ interface CalendarViewProps {
   enrolledCourseIds?: number[];
 }
 
-const CustomEvent = (props: any) => {
+type CalendarEventData = {
+  id: string;
+  title: string;
+  instructor: string;
+  spots: number;
+  image: string;
+  time: string;
+  _isPast?: boolean;
+  _enrolled?: boolean;
+  _style?: { bg: string; border: string; text: string };
+};
+
+type CalendarEventProps = {
+  calendarEvent: CalendarEventData;
+};
+
+const CustomEvent = (props: CalendarEventProps) => {
   const event = props.calendarEvent;
   const spotsColor = event.spots === 0 ? "#ef4444" : event.spots < 5 ? "#f59e0b" : "#10b981";
   const colors = event._style || COLOR_STYLES[0];
@@ -74,7 +91,7 @@ const CustomEvent = (props: any) => {
   );
 };
 
-const MonthEvent = (props: any) => {
+const MonthEvent = (props: CalendarEventProps) => {
   const event = props.calendarEvent;
   const colors = event._style || COLOR_STYLES[0];
 
@@ -144,7 +161,8 @@ const CalendarView = ({
 
         try {
           const [timePart, period] = course.time.split(" ");
-          let [hours, minutes] = timePart.split(":").map(Number);
+          const [parsedHours, minutes] = timePart.split(":").map(Number);
+          let hours = parsedHours;
           if (period === "PM" && hours !== 12) hours += 12;
           if (period === "AM" && hours === 12) hours = 0;
 
@@ -169,7 +187,7 @@ const CalendarView = ({
             _style: COLOR_STYLES[index % COLOR_STYLES.length],
             _enrolled: enrolledCourseIds.includes(course.id),
           };
-        } catch (e) {
+        } catch {
           return null;
         }
       })
@@ -179,7 +197,7 @@ const CalendarView = ({
   const calendarApp = useCalendarApp(
     {
       views: [createViewWeek(), createViewMonthGrid(), createViewDay()],
-      events: events as any[],
+      events: events as CalendarEventExternal[],
       defaultView: createViewWeek().name,
       selectedDate: today,
       dayBoundaries: {
@@ -187,7 +205,8 @@ const CalendarView = ({
         end: "23:00",
       },
       callbacks: {
-        onEventClick(calendarEvent, e: UIEvent) {
+        onEventClick(calendarEvent: CalendarEventExternal, e: UIEvent) {
+          void e;
           const course = courses.find(
             (c) => String(c.id) === String(calendarEvent.id),
           );

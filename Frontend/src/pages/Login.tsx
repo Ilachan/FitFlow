@@ -11,6 +11,7 @@ import {
   loginRequest,
   roleIdToFrontendRole,
 } from "../lib/api";
+import { validateEmail } from "../lib/validation";
 
 import BackgroundBlobs from "../components/ui/BackgroundBlobs";
 
@@ -22,14 +23,33 @@ const Login = () => {
     password: "",
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  const validateForm = () => {
+    const nextErrors: { email?: string; password?: string } = {};
+
+    if (!formData.email.trim()) {
+      nextErrors.email = "Email is required.";
+    } else if (!validateEmail(formData.email)) {
+      nextErrors.email = "Please enter a valid email address.";
+    }
+
+    if (!formData.password.trim()) {
+      nextErrors.password = "Password is required.";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   const handleLogin = async () => {
     if (loading) {
       return;
     }
 
-    if (!formData.email || !formData.password) {
-      toast.error("Please enter email and password.");
+    if (!validateForm()) {
+      toast.error("Please correct the highlighted fields.");
       return;
     }
 
@@ -79,10 +99,22 @@ const Login = () => {
               type="email"
               placeholder="Email Address"
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={(e) => {
+                const email = e.target.value;
+                setFormData({ ...formData, email });
+                setErrors((prev) => ({
+                  ...prev,
+                  email: !email.trim()
+                    ? "Email is required."
+                    : validateEmail(email)
+                      ? undefined
+                      : "Please enter a valid email address.",
+                }));
+              }}
             />
+            {errors.email && (
+              <p className="mt-1.5 text-xs text-rose-500">{errors.email}</p>
+            )}
           </div>
 
           <div className="relative group">
@@ -90,13 +122,30 @@ const Login = () => {
               <Icons.Lock />
             </div>
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
+              onChange={(e) => {
+                const password = e.target.value;
+                setFormData({ ...formData, password });
+                setErrors((prev) => ({
+                  ...prev,
+                  password: !password.trim()
+                    ? "Password is required."
+                    : undefined,
+                }));
+              }}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 hover:text-indigo-600"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+            {errors.password && (
+              <p className="mt-1.5 text-xs text-rose-500">{errors.password}</p>
+            )}
           </div>
 
           <Button className="w-full py-3.5 text-lg mt-2" onClick={handleLogin}>

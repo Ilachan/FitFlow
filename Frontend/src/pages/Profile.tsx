@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import Modal from "../components/ui/Modal";
 import { Icons } from "../lib/icons";
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
@@ -10,6 +11,13 @@ import {
   updateProfileRequest,
   type UserProfile,
 } from "../lib/api";
+import {
+  formatPhoneNumberUS,
+  isAgeAtLeast,
+  isValidAvatarUrl,
+  isValidPhoneNumberUS,
+  validateEmail,
+} from "../lib/validation";
 
 const normalizeFromApi = (value: string | undefined) => (value || "").trim();
 const forcePersistEmpty = (value: string) => {
@@ -17,70 +25,163 @@ const forcePersistEmpty = (value: string) => {
   return trimmed === "" ? " " : value;
 };
 
+type ProfileErrors = {
+  name?: string;
+  email?: string;
+  avatar_url?: string;
+  date_of_birth?: string;
+  phone_number?: string;
+};
+
+const initialProfileState: UserProfile = {
+  name: "",
+  email: "",
+  avatar_url: "",
+  date_of_birth: "",
+  gender: "",
+  phone_number: "",
+  address: "",
+};
+
 const Profile = () => {
   const { role, token } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [showConfirmSave, setShowConfirmSave] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
-  const [formData, setFormData] = useState<UserProfile>({
-    name: "",
-    email: "",
-    avatar_url: "",
-    date_of_birth: "",
-    gender: "",
-    phone_number: "",
-    address: "",
-  });
+  const [formData, setFormData] = useState<UserProfile>(initialProfileState);
+  const [originalData, setOriginalData] = useState<UserProfile>(initialProfileState);
+  const [errors, setErrors] = useState<ProfileErrors>({});
+
+  const avatarFallback = useMemo(() => {
+    const name = formData.name.trim() || "User";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=ffffff`;
+  }, [formData.name]);
+
+  const avatarPreview = formData.avatar_url.trim() || avatarFallback;
+
+  const isDirty = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(originalData);
+  }, [formData, originalData]);
+
+  const validateSingleField = useCallback(
+    (field: keyof UserProfile, value: string): string | undefined => {
+      if (field === "name" && !value.trim()) {
+        return "Full name is required.";
+      }
+
+      if (field === "email") {
+        if (!value.trim()) {
+          return "Email is required.";
+        }
+        if (!validateEmail(value)) {
+          return "Please enter a valid email address.";
+        }
+      }
+
+      if (field === "avatar_url" && !isValidAvatarUrl(value)) {
+        return "Avatar URL must start with http:// or https://.";
+      }
+
+      if (field === "phone_number" && !isValidPhoneNumberUS(value)) {
+        return "Phone number must match (XXX) XXX-XXXX.";
+      }
+
+      if (field === "date_of_birth") {
+        if (value && !isAgeAtLeast(value, 13)) {
+          return "You must be at least 13 years old.";
+        }
+      }
+
+      return undefined;
+    },
+    [],
+  );
+
+  const validateAllFields = useCallback((): boolean => {
+    const nextErrors: ProfileErrors = {
+      name: validateSingleField("name", formData.name),
+      email: validateSingleField("email", formData.email),
+      avatar_url: validateSingleField("avatar_url", formData.avatar_url),
+      phone_number: validateSingleField("phone_number", formData.phone_number),
+      date_of_birth: validateSingleField(
+        "date_of_birth",
+        formData.date_of_birth,
+      ),
+    };
+
+    const compactErrors = Object.fromEntries(
+      Object.entries(nextErrors).filter(([, error]) => Boolean(error)),
+    ) as ProfileErrors;
+
+    setErrors(compactErrors);
+    return Object.keys(compactErrors).length === 0;
+  }, [formData, validateSingleField]);
+
+  const loadProfile = useCallback(async () => {
+    if (!token) {
+      setInitializing(false);
+      return;
+    }
+
+    try {
+      const data = await getProfileRequest(token);
+      const normalizedProfile: UserProfile = {
+        name: normalizeFromApi(data.name),
+        email: normalizeFromApi(data.email),
+        avatar_url: normalizeFromApi(data.avatar_url),
+        date_of_birth: normalizeFromApi(data.date_of_birth),
+        gender: normalizeFromApi(data.gender),
+        phone_number: normalizeFromApi(data.phone_number),
+        address: normalizeFromApi(data.address),
+      };
+
+      setFormData(normalizedProfile);
+      setOriginalData(normalizedProfile);
+      setErrors({});
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load profile";
+      toast.error(message);
+    } finally {
+      setInitializing(false);
+    }
+  }, [token]);
 
   useEffect(() => {
     let active = true;
 
-    const loadProfile = async () => {
-      if (!token) {
-        setInitializing(false);
+    setInitializing(true);
+
+    void (async () => {
+      await loadProfile();
+      if (!active) {
         return;
       }
-
-      try {
-        const data = await getProfileRequest(token);
-        if (!active) {
-          return;
-        }
-        setFormData({
-          name: normalizeFromApi(data.name),
-          email: normalizeFromApi(data.email),
-          avatar_url: normalizeFromApi(data.avatar_url),
-          date_of_birth: normalizeFromApi(data.date_of_birth),
-          gender: normalizeFromApi(data.gender),
-          phone_number: normalizeFromApi(data.phone_number),
-          address: normalizeFromApi(data.address),
-        });
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to load profile";
-        toast.error(message);
-      } finally {
-        if (active) {
-          setInitializing(false);
-        }
-      }
-    };
-
-    void loadProfile();
+    })();
 
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [loadProfile]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    const fieldName = name as keyof UserProfile;
+    const rawValue = e.target.value;
+    const value =
+      fieldName === "phone_number" ? formatPhoneNumberUS(rawValue) : rawValue;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [fieldName]: value,
+    }));
+    setErrors((prev) => ({
+      ...prev,
+      [fieldName]: validateSingleField(fieldName, value),
     }));
   };
 
@@ -101,14 +202,7 @@ const Profile = () => {
       };
 
       await updateProfileRequest(token, payload);
-      setFormData((prev) => ({
-        ...prev,
-        avatar_url: normalizeFromApi(prev.avatar_url),
-        date_of_birth: normalizeFromApi(prev.date_of_birth),
-        gender: normalizeFromApi(prev.gender),
-        phone_number: normalizeFromApi(prev.phone_number),
-        address: normalizeFromApi(prev.address),
-      }));
+      await loadProfile();
       toast.success("Profile saved successfully!");
     } catch (error) {
       const message =
@@ -117,6 +211,26 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openSaveConfirmation = () => {
+    if (!validateAllFields()) {
+      toast.error("Please fix the validation errors before saving.");
+      return;
+    }
+
+    if (!isDirty) {
+      toast("No changes to save.", { icon: "ℹ️" });
+      return;
+    }
+
+    setShowConfirmSave(true);
+  };
+
+  const handleCancelChanges = () => {
+    setFormData(originalData);
+    setErrors({});
+    toast("Changes were discarded.", { icon: "ℹ️" });
   };
 
   const handleUpgrade = () => {
@@ -153,7 +267,7 @@ const Profile = () => {
           )}
         </div>
         <Button
-          onClick={handleSave}
+          onClick={openSaveConfirmation}
           className={loading ? "opacity-50 cursor-not-allowed" : ""}
         >
           {loading ? (
@@ -175,8 +289,11 @@ const Profile = () => {
           <Card className="p-6 text-center space-y-4">
             <div className="relative w-32 h-32 mx-auto">
               <img
-                src={`https://picsum.photos/id/${1}/200/200`}
+                src={avatarPreview}
                 alt="Profile"
+                onError={(event) => {
+                  event.currentTarget.src = avatarFallback;
+                }}
                 className="w-full h-full rounded-full object-cover border-4 border-indigo-50"
               />
               <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full shadow-lg capitalize">
@@ -248,6 +365,9 @@ const Profile = () => {
                   onChange={handleChange}
                   placeholder="Enter full name"
                 />
+                {errors.name && (
+                  <p className="text-xs text-rose-500">{errors.name}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
@@ -260,6 +380,23 @@ const Profile = () => {
                   onChange={handleChange}
                   placeholder="Enter email"
                 />
+                {errors.email && (
+                  <p className="text-xs text-rose-500">{errors.email}</p>
+                )}
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Avatar URL
+                </label>
+                <Input
+                  name="avatar_url"
+                  value={formData.avatar_url}
+                  onChange={handleChange}
+                  placeholder="https://example.com/avatar.png"
+                />
+                {errors.avatar_url && (
+                  <p className="text-xs text-rose-500">{errors.avatar_url}</p>
+                )}
               </div>
             </div>
           </Card>
@@ -280,6 +417,11 @@ const Profile = () => {
                   value={formData.date_of_birth}
                   onChange={handleChange}
                 />
+                {errors.date_of_birth && (
+                  <p className="text-xs text-rose-500">
+                    {errors.date_of_birth}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
@@ -295,6 +437,7 @@ const Profile = () => {
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -305,8 +448,11 @@ const Profile = () => {
                   name="phone_number"
                   value={formData.phone_number}
                   onChange={handleChange}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="(555) 000-0000"
                 />
+                {errors.phone_number && (
+                  <p className="text-xs text-rose-500">{errors.phone_number}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
@@ -320,9 +466,47 @@ const Profile = () => {
                 />
               </div>
             </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-end">
+              <Button
+                variant="secondary"
+                onClick={handleCancelChanges}
+                className={!isDirty ? "opacity-50 pointer-events-none" : ""}
+              >
+                Cancel Changes
+              </Button>
+              <Button onClick={openSaveConfirmation}>Save Changes</Button>
+            </div>
           </Card>
         </div>
       </div>
+
+      <Modal isOpen={showConfirmSave} onClose={() => setShowConfirmSave(false)}>
+        <div className="p-6">
+          <h3 className="text-lg font-bold text-slate-900">
+            Confirm Profile Update
+          </h3>
+          <p className="text-sm text-slate-500 mt-2">
+            Are you sure you want to save these changes to your profile?
+          </p>
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => setShowConfirmSave(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                setShowConfirmSave(false);
+                await handleSave();
+              }}
+            >
+              Confirm Save
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
