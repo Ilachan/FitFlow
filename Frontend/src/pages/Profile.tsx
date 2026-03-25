@@ -10,6 +10,7 @@ import {
   createManagerInviteCodeRequest,
   getProfileRequest,
   updateProfileRequest,
+  type UpdateUserProfilePayload,
   type UserProfile,
 } from "../lib/api";
 import {
@@ -20,10 +21,16 @@ import {
   validateEmail,
 } from "../lib/validation";
 
+const GENDER_OPTIONS = ["Male", "Female", "Other"] as const;
+type GenderOption = (typeof GENDER_OPTIONS)[number];
+
+const isGenderOption = (value: string): value is GenderOption =>
+  GENDER_OPTIONS.includes(value as GenderOption);
+
 const normalizeFromApi = (value: string | undefined) => (value || "").trim();
-const forcePersistEmpty = (value: string) => {
-  const trimmed = value.trim();
-  return trimmed === "" ? " " : value;
+const normalizeGenderFromApi = (value: string | undefined) => {
+  const normalized = normalizeFromApi(value);
+  return isGenderOption(normalized) ? normalized : "";
 };
 
 type ProfileErrors = {
@@ -136,7 +143,7 @@ const Profile = () => {
         email: normalizeFromApi(data.email),
         avatar_url: normalizeFromApi(data.avatar_url),
         date_of_birth: normalizeFromApi(data.date_of_birth),
-        gender: normalizeFromApi(data.gender),
+        gender: normalizeGenderFromApi(data.gender),
         phone_number: normalizeFromApi(data.phone_number),
         address: normalizeFromApi(data.address),
       };
@@ -196,14 +203,35 @@ const Profile = () => {
 
     setLoading(true);
     try {
-      const payload: UserProfile = {
-        ...formData,
-        avatar_url: forcePersistEmpty(formData.avatar_url),
-        date_of_birth: forcePersistEmpty(formData.date_of_birth),
-        gender: forcePersistEmpty(formData.gender),
-        phone_number: forcePersistEmpty(formData.phone_number),
-        address: forcePersistEmpty(formData.address),
+      const payload: UpdateUserProfilePayload = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
       };
+
+      const avatarUrl = formData.avatar_url.trim();
+      if (avatarUrl !== "") {
+        payload.avatar_url = avatarUrl;
+      }
+
+      const dateOfBirth = formData.date_of_birth.trim();
+      if (dateOfBirth !== "") {
+        payload.date_of_birth = dateOfBirth;
+      }
+
+      const phoneNumber = formData.phone_number.trim();
+      if (phoneNumber !== "") {
+        payload.phone_number = phoneNumber;
+      }
+
+      const address = formData.address.trim();
+      if (address !== "") {
+        payload.address = address;
+      }
+
+      const gender = formData.gender.trim();
+      if (gender !== "") {
+        payload.gender = gender;
+      }
 
       await updateProfileRequest(token, payload);
       await loadProfile();
@@ -229,12 +257,6 @@ const Profile = () => {
     }
 
     setShowConfirmSave(true);
-  };
-
-  const handleCancelChanges = () => {
-    setFormData(originalData);
-    setErrors({});
-    toast("Changes were discarded.", { icon: "ℹ️" });
   };
 
   const handleGenerateInviteCode = async () => {
@@ -510,11 +532,12 @@ const Profile = () => {
                   onChange={handleChange}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                 >
-                  <option value="">Select Gender</option>
+                  {formData.gender.trim() === "" && (
+                    <option value="">Select Gender</option>
+                  )}
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -542,17 +565,6 @@ const Profile = () => {
                   placeholder="Street Address"
                 />
               </div>
-            </div>
-
-            <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-end">
-              <Button
-                variant="secondary"
-                onClick={handleCancelChanges}
-                className={!isDirty ? "opacity-50 pointer-events-none" : ""}
-              >
-                Cancel Changes
-              </Button>
-              <Button onClick={openSaveConfirmation}>Save Changes</Button>
             </div>
           </Card>
         </div>

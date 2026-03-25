@@ -59,8 +59,7 @@ describe("Profile page", () => {
     await userEvent.clear(avatarInput);
     await userEvent.type(avatarInput, "invalid-avatar-url");
 
-    const saveButtons = screen.getAllByRole("button", { name: "Save Changes" });
-    await userEvent.click(saveButtons[saveButtons.length - 1]);
+    await userEvent.click(screen.getByRole("button", { name: "Save Changes" }));
 
     expect(
       screen.getByText("Avatar URL must start with http:// or https://."),
@@ -68,24 +67,16 @@ describe("Profile page", () => {
     expect(mockUpdateProfileRequest).not.toHaveBeenCalled();
   });
 
-  it("restores original values when cancel changes is clicked", async () => {
+  it("does not show redundant bottom action buttons", async () => {
     render(<Profile />);
 
-    const nameInput = (await screen.findByPlaceholderText(
-      "Enter full name",
-    )) as HTMLInputElement;
-
-    expect(nameInput.value).toBe("Alex Johnson");
-
-    await userEvent.clear(nameInput);
-    await userEvent.type(nameInput, "Changed Name");
-    expect(nameInput.value).toBe("Changed Name");
-
-    await userEvent.click(
-      screen.getByRole("button", { name: "Cancel Changes" }),
-    );
-
-    expect(nameInput.value).toBe("Alex Johnson");
+    await screen.findByPlaceholderText("Enter full name");
+    expect(
+      screen.queryByRole("button", { name: "Cancel Changes" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: "Save Changes" }),
+    ).toHaveLength(1);
   });
 
   it("opens save confirmation and submits update on confirm", async () => {
@@ -99,8 +90,7 @@ describe("Profile page", () => {
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "Updated Alex");
 
-    const saveButtons = screen.getAllByRole("button", { name: "Save Changes" });
-    await userEvent.click(saveButtons[saveButtons.length - 1]);
+    await userEvent.click(screen.getByRole("button", { name: "Save Changes" }));
 
     expect(
       screen.getByText(

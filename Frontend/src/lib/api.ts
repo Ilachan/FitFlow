@@ -139,11 +139,23 @@ export type UserProfile = {
   address: string;
 };
 
+export type UpdateUserProfilePayload = {
+  name: string;
+  email: string;
+  avatar_url?: string;
+  date_of_birth?: string;
+  phone_number?: string;
+  address?: string;
+  gender?: string;
+};
+
 export const getProfileRequest = (token: string) =>
   authRequest<UserProfile>("/auth/profile", "GET", token);
 
-export const updateProfileRequest = (token: string, profile: UserProfile) =>
-  authRequest<{ message: string }>("/auth/profile", "PUT", token, profile);
+export const updateProfileRequest = (
+  token: string,
+  profile: UpdateUserProfilePayload,
+) => authRequest<{ message: string }>("/auth/profile", "PUT", token, profile);
 
 export type CreateManagerInviteCodeRequest = {
   expire_hours: number;
