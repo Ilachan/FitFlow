@@ -22,6 +22,15 @@
 - Implemented analytics endpoint and authorization checks
 - Service computes analytics and backfills `UserDailyActivity` from enrollments before computing analytics
 
+**Frontend Work Completed (Sprint 2)**
+
+- Implemented Activity Frequency chart visualization with improved date labeling: `Wed, Mar 25` format (7d/1m view) and `Mar 2026` format (3m view)
+- Restored Y-axis visibility with integer-only values (`allowDecimals={false}`) for clarity
+- Added summary statistics display: total sessions count and active days indicator
+- Enhanced chart tooltip with detailed breakdown of classes per date
+- Added empty state messaging for periods with no activity
+- Implemented responsive chart height and margins for better visual hierarchy
+
 ---
 
 #### 2) Manager — Create a class
@@ -132,11 +141,11 @@
 
 - Added real-time form validation for email/password
 - Added password show/hide toggle in registration form
-- Added password strength indicator with visual progress bar and rule checklist (weak/medium/strong)
 - Added registration success confirmation modal while preserving auto-login behavior
 - Added centralized validation utilities in `src/lib/validation.ts` for email, password strength, password format validation
 - Enhanced error messaging with inline field-level validation
 - Verified project compiles and passes lint
+- Removed password strength UI display (progress bar and rule checklist) while retaining backend password validation logic
 
 ---
 
@@ -158,18 +167,22 @@
 - Added inline error messages for validation failures
 - Added centralized validation utilities for email format validation
 - Enhanced error messaging display
+- Removed frontend role selector (Student/Manager toggle buttons) — user role is now determined dynamically by backend via `role_id` in login response
+- Updated role assignment logic to use backend `role_id` mapping: `role_id` 1→Student, 2→SuperManager, 3→Manager
 
 ---
 
-#### 9) Student — View User Profile (Sprint 1: Completed, verified in Sprint 2)
+#### 9) Student — View User Profile & Navbar Avatar Sync (Sprint 1: Completed, enhanced in Sprint 2)
 
-**As a student user**, I want to view my profile information, so that I can see my account details and personal information.
+**As a student user**, I want to view my profile information and see it reflected in the navigation bar, so that I can see my account details and avatar in real-time.
 
 **Acceptance Criteria**
 
 - Students can view complete profile information (name, avatar, DOB, gender, phone, address, email, registration date)
 - Profile page displays enrolled class count
 - Default avatar is displayed if user hasn't uploaded one
+- Navbar displays user avatar with same fallback logic as profile page
+- Navbar avatar updates instantly when profile is updated
 - Users must be authenticated to access their profile
 
 **Frontend Work Completed**
@@ -178,6 +191,10 @@
 - Avatar image with fallback to default avatar
 - Formatted date of birth and phone number display
 - Navigation link to profile page in header/menu implemented in Sprint 1
+- Enhanced Navbar to fetch and display user avatar from profile on mount
+- Implemented profile-updated event listener to sync navbar avatar after profile changes
+- Applied consistent avatar fallback logic (initials from name) across all components
+- Made avatar responsive and added profile event synchronization
 
 ---
 
@@ -194,6 +211,8 @@
 - Users receive confirmation message after successful update
 - Form displays current profile information as default values
 - Users can cancel changes and revert to original values
+- Email field is immutable and cannot be changed after account creation
+- Gender field supports 3 options (Male, Female, Other) and is optional
 - All fields are optional except name
 
 **Frontend Work Completed (Sprint 2)**
@@ -203,7 +222,10 @@
 - Added avatar URL input with live avatar preview and fallback image
 - Added phone input with real-time formatting to `(XXX) XXX-XXXX` format and validation
 - Added date picker for date of birth with age validation (minimum 13 years)
-- Added dropdown for gender selection
+- Enhanced gender field with 3-option dropdown (Male, Female, Other) supporting optional selection with null clearing
+- Set email field to read-only/disabled with "cannot be changed" helper text
+- Removed redundant multi-button layout (Cancel/Save buttons consolidation)
+- Enhanced payload builder: sends only modified fields on save, sends null for cleared optional fields
 - Added real-time validation for phone number and avatar URL
 - Added confirmation modal before saving changes
 - Added cancel changes action to restore last loaded profile state
@@ -213,9 +235,9 @@
 
 ---
 
-#### 11) Student — Enroll in a Class (Sprint 1: Completed)
+#### 11) Student — Enroll in a Class (Sprint 1: Completed, enhanced in Sprint 2)
 
-**As a student**, I want to enroll in a class, so that I can participate in the course.
+**As a student**, I want to enroll in a class and maintain my browsing context, so that I can participate in the course without losing my place on the page.
 
 **Acceptance Criteria**
 
@@ -223,43 +245,136 @@
 - Enrollment respects max capacity
 - Duplicate enrollment is prevented
 - Success response confirms enrollment
+- Page scroll position is preserved after enrollment
+- Notification is shown for enrollment success/failure
 
 **Frontend Work Completed**
 
 - "Book Now" button implemented on course cards (Sprint 1)
+- Added scroll position preservation during enrollment operation
+- Implemented toast notification system for success/error feedback
+- Positioned toast notifications to avoid navbar obstruction (top-right, margin-top 60px)
 
 ---
 
-#### 12) Student — Drop a Class (Sprint 1: Completed)
+#### 12) Student — Drop a Class (Sprint 1: Completed, enhanced in Sprint 2)
 
-**As a student**, I want to cancel my enrollment, so that I can adjust my schedule.
+**As a student**, I want to cancel my enrollment and maintain my browsing context, so that I can adjust my schedule without losing my place.
 
 **Acceptance Criteria**
 
 - Students can drop enrolled classes
 - Confirmation before cancellation
 - Success response confirms removal
+- Page scroll position is preserved after dropping
+- Notification is shown for drop success/failure
 
 **Frontend Work Completed**
 
 - "Cancel Registration" button in dashboard (Sprint 1)
+- Added scroll position preservation during drop operation
+- Implemented confirmation modal before class removal
+- Added toast notification for drop feedback
 
 ---
 
-#### 13) Student — View Course List (Sprint 1: Completed)
+#### 13) Student — View Course List with Calendar & Detail Modals (Sprint 1: Completed, enhanced in Sprint 2)
 
-**As a user**, I want to view a list of available courses, so that I can discover classes.
+**As a user**, I want to view available courses in multiple formats including a calendar view, so that I can discover classes by schedule and manage enrollments from course detail modals.
 
 **Acceptance Criteria**
 
 - Display list of all available classes
 - Show class details (name, time, capacity, instructor, category)
 - Show remaining spots for each class
+- Display recurring classes on all matching weekdays across a 3-month window
+- Show calendar view with visual course indicators
+- Course detail modal for each class with enrollment options
+- Scroll position preserved during browse operations
 
 **Frontend Work Completed**
 
-- Course list page component displaying all available classes
-- Class details displayed with spots remaining
+- Course list page component displaying all available classes (Sprint 1)
+- Class details displayed with spots remaining (Sprint 1)
+- Implemented CalendarView component with schedule-x library integration
+- Added recurring course expansion: generates events for all matching weekdays in ±3 month range
+- Created custom event rendering for time-grid and month-grid views with course cards
+- Color-coded course categories with consistent styling across calendar views
+- Fixed z-index conflicts between calendar navigation and navbar
+- Optimized calendar height to 450px for balanced layout
+- Added course details modal with color-coded styling matching calendar
+- Implemented course click handling to open details modal from calendar events
+- Added enrolled class indicators (green dot) on calendar events and course card lists
+
+---
+
+#### 13A) Role-Based Access Control (RBAC) — Shared Browse page controls by role
+
+**As a logged-in user**, I want the same Browse page to show different management actions based on my role, so that students only use enrollment actions while managers can maintain classes.
+
+**Acceptance Criteria**
+
+- Student cannot see class management controls (Add/Edit/Delete)
+- Manager and SuperManager can see class management controls on Browse cards and header actions
+- Role comes from backend login response (`role_id`) and persisted auth state (no frontend role toggle)
+- Visibility is controlled in-page via conditional render (isVisible/isShow behavior)
+
+**Frontend Work Completed**
+
+- Extended frontend role model to three roles: `student`, `manager`, `supermanager`
+- Updated role mapping logic to match backend: `1 -> student`, `2 -> supermanager`, `3 -> manager`
+- Applied role-gated rendering in Browse page for management controls
+- Kept single shared Browse page for all roles (no separate role-specific page)
+
+---
+
+#### 13B) Manager/SuperManager — Manage classes directly in Browse (Add/Edit/Delete)
+
+**As a manager-level user**, I want to add, edit, and delete classes from the Browse interface, so that class operations are available where classes are listed.
+
+**Acceptance Criteria**
+
+- Add button appears near Cards/Calendar switch for manager-level roles only
+- Each class card shows Edit/Delete actions for manager-level roles only
+- Add/Edit opens modal form and submits to backend class APIs
+- Delete requires explicit confirmation before API call
+
+**Frontend Work Completed**
+
+- Added frontend class management API methods:
+  - `createClassRequest` (`POST /classes`)
+  - `updateClassRequest` (`PUT /classes/:id`)
+  - `deleteClassRequest` (`DELETE /classes/:id`)
+- Implemented Add/Edit class modal in Browse with backend-aligned fields:
+  - `name`, `course_code`, `description`, `category`, `capacity`, `weekday`, `start_time`, `end_time`, `duration`
+- Added time linkage logic in form:
+  - Changing `duration` auto-updates `end_time`
+  - Changing `start_time` or `end_time` auto-updates `duration`
+- Added delete confirmation modal for class removal
+- Improved Browse management action styling (left-aligned controls, compact button sizing)
+
+---
+
+#### 13C) SuperManager — Generate manager invite code in Profile
+
+**As a supermanager**, I want to generate and copy manager invite codes in Profile, so that I can onboard managers securely.
+
+**Acceptance Criteria**
+
+- Invite module is visible only to `supermanager`
+- Form captures backend payload fields:
+  - `invitee_email`
+  - `expire_hours`
+- Generate action calls invite code API and displays returned code
+- Copy action copies generated code to clipboard
+
+**Frontend Work Completed**
+
+- Replaced placeholder student upgrade card with supermanager invite workflow
+- Added `createManagerInviteCodeRequest` frontend API integration (`POST /auth/manager/invite-codes`)
+- Added form validation for invitee email format and expire hours range (`1..720`)
+- Added generated-code display and one-click copy action with toast feedback
+- Arranged action buttons in two rows for improved spacing/readability
 
 ---
 
@@ -317,8 +432,8 @@
 - `cypress/e2e/register-validation.cy.ts` (3 tests)
   
   - Empty register submit shows required field errors
-  - Password strength indicator updates while typing
-  - Manager registration requires invitation code
+  - Validates password policy on weak password (updated to match current implementation)
+  - Requires invitation code for manager registration
 
 - `cypress/e2e/auth-guard.cy.ts` (1 test)
   
@@ -332,7 +447,7 @@
 
 ---
 
-### 2.2 Frontend Unit Tests (20 tests, 6 files)
+### 2.2 Frontend Unit Tests (19 tests, 6 files)
 
 **Test Framework Setup**
 
@@ -343,12 +458,11 @@
 
 **Test Files & Coverage**
 
-**1. `src/lib/validation.test.ts` (6 tests)**
+**1. `src/lib/validation.test.ts` (5 tests)**
 
 - Email validation (valid/invalid formats)
 - Password policy checks and strength labels (weak/medium/strong/invalid)
-- Phone formatter converts 10-digit input to `(XXX) XXX-XXXX` format
-- Phone validator accepts formatted phone numbers
+- Phone formatter and validator: converts 10-digit input to `(XXX) XXX-XXXX` format and validates formatted phone numbers
 - Avatar URL validator accepts valid image URLs
 - Minimum age validator checks age >= 13
 
@@ -360,7 +474,7 @@
 **3. `src/pages/Register.test.tsx` (2 tests)**
 
 - Empty submit shows required field errors
-- Password strength indicator updates when user types
+- Shows password policy validation error for invalid password input
 
 **4. `src/pages/Profile.test.tsx` (3 tests)**
 
@@ -370,7 +484,7 @@
 
 **5. `src/lib/api.test.ts` (4 tests)**
 
-- Backend role-id mapping to frontend role (1→student, 2/3→manager)
+- Backend role-id mapping to frontend role (1→student, 2→supermanager, 3→manager)
 - JWT payload user-id extraction
 - Invalid token fallback behavior
 
@@ -383,7 +497,7 @@
 **Execution Result**
 
 - Test files: 6 passed
-- Tests: 20 passed (6 + 2 + 2 + 3 + 4 + 3)
+- Tests: 19 passed (5 + 2 + 2 + 3 + 4 + 3)
 - Command: `npm test`
 - Build & Lint: ✓ Green
 
@@ -608,12 +722,15 @@ Authorization uses `Authorization: Bearer <JWT>` and reads `id` and `role_id` fr
 - ✓ Enhanced authentication UX: Real-time validation, password toggle, strength indicator, confirmation modals
 - ✓ Completed profile editing flow: Field validation, avatar preview, phone formatting, age check, save confirmation, cancel changes
 - ✓ Implemented comprehensive validation library (email, password, phone, avatar, age)
+- ✓ Implemented role-aware frontend authorization UX on shared Browse page (student vs manager/supermanager controls)
+- ✓ Added manager-level class management UX in Browse (Add/Edit/Delete with API integration and confirmation dialogs)
+- ✓ Added supermanager invite code generation UX in Profile (invitee email + expire hours + copy code)
 - ✓ Build and lint: passing
 
 **Frontend Testing**
 
 - ✓ Cypress E2E: 4 specs, 7 tests passing
-- ✓ Vitest unit tests: 6 files, 20 tests passing
+- ✓ Vitest unit tests: 6 files, 19 tests passing
 - ✓ Code quality maintained
 
 **Backend Sprint 2 Features**
@@ -651,6 +768,5 @@ go test ./service -v -count=1   # Service tests only
 
 ---
 
-**Document Status**: Ready for submission
-**Last Updated**: Sprint 2, March 24, 2026
+**Last Updated**: Sprint 2, March 25, 2026
 **Team**: Frontend (Forrest Yan Sun, Ila Adhikari) + Backend (Qing Li, Yingzhu Chen)

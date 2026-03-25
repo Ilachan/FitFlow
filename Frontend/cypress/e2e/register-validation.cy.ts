@@ -9,12 +9,15 @@ describe("Register validation", () => {
     cy.contains("Password is required.").should("be.visible");
   });
 
-  it("updates password strength indicator while typing", () => {
+  it("validates password policy on weak password", () => {
     cy.visit("/register");
 
-    cy.contains("weak").should("be.visible");
-    cy.get('input[placeholder="Password"]').type("Abcdefg1");
-    cy.contains("strong").should("be.visible");
+    cy.get('input[placeholder="Full Name"]').type("Test User");
+    cy.get('input[placeholder="Email Address"]').type("test@example.com");
+    cy.get('input[placeholder="Password"]').type("weak");
+    cy.contains("button", "Create Account").click();
+
+    cy.contains("Password must be 8+ chars").should("be.visible");
   });
 
   it("requires invitation code for manager registration", () => {
