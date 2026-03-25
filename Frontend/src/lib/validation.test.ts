@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   evaluatePassword,
   formatPhoneNumberUS,
-  getPasswordStrength,
   isAgeAtLeast,
   isPasswordValid,
   isValidAvatarUrl,
@@ -27,13 +26,6 @@ describe("validation utilities", () => {
     expect(isPasswordValid("Abcd1234")).toBe(true);
     expect(isPasswordValid("abcd1234")).toBe(false);
     expect(isPasswordValid("ABCD1234")).toBe(false);
-  });
-
-  it("returns password strength labels", () => {
-    expect(getPasswordStrength("")).toBe("weak");
-    expect(getPasswordStrength("abc")).toBe("weak");
-    expect(getPasswordStrength("Abcdefgh")).toBe("medium");
-    expect(getPasswordStrength("Abcdefg1")).toBe("strong");
   });
 
   it("formats and validates US phone numbers", () => {

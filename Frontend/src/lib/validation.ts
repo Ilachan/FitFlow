@@ -5,8 +5,6 @@ export type PasswordCheckResult = {
   hasNumber: boolean;
 };
 
-export type PasswordStrength = "weak" | "medium" | "strong";
-
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const AVATAR_URL_REGEX = /^https?:\/\/.+/i;
 const PHONE_US_REGEX = /^\(\d{3}\) \d{3}-\d{4}$/;
@@ -32,25 +30,6 @@ export const isPasswordValid = (password: string): boolean => {
     checks.hasLowercase &&
     checks.hasNumber
   );
-};
-
-export const getPasswordStrength = (password: string): PasswordStrength => {
-  if (!password) {
-    return "weak";
-  }
-
-  const checks = evaluatePassword(password);
-  const passedChecks = Object.values(checks).filter(Boolean).length;
-
-  if (passedChecks <= 2) {
-    return "weak";
-  }
-
-  if (passedChecks === 3) {
-    return "medium";
-  }
-
-  return "strong";
 };
 
 export const formatPhoneNumberUS = (input: string): string => {

@@ -15,12 +15,7 @@ import {
   registerStudentRequest,
   roleIdToFrontendRole,
 } from "../lib/api";
-import {
-  evaluatePassword,
-  getPasswordStrength,
-  isPasswordValid,
-  validateEmail,
-} from "../lib/validation";
+import { isPasswordValid, validateEmail } from "../lib/validation";
 
 type RegisterErrors = {
   fullName?: string;
@@ -40,12 +35,9 @@ const Register = () => {
     password: "",
   });
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  // const [showPassword, setShowPassword] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errors, setErrors] = useState<RegisterErrors>({});
-
-  const passwordChecks = evaluatePassword(formData.password);
-  const passwordStrength = getPasswordStrength(formData.password);
 
   const validateForm = (): boolean => {
     const nextErrors: RegisterErrors = {};
@@ -167,9 +159,6 @@ const Register = () => {
           </div>
 
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-              <Icons.User />
-            </div>
             <Input
               type="text"
               placeholder="Full Name"
@@ -179,7 +168,9 @@ const Register = () => {
                 setFormData({ ...formData, fullName });
                 setErrors((prev) => ({
                   ...prev,
-                  fullName: fullName.trim() ? undefined : "Full name is required.",
+                  fullName: fullName.trim()
+                    ? undefined
+                    : "Full name is required.",
                 }));
               }}
             />
@@ -188,9 +179,6 @@ const Register = () => {
             )}
           </div>
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-              <Icons.Mail />
-            </div>
             <Input
               type="email"
               placeholder="Email Address"
@@ -214,11 +202,8 @@ const Register = () => {
           </div>
 
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-              <Icons.Lock />
-            </div>
             <Input
-              type={showPassword ? "text" : "password"}
+              type="password"
               placeholder="Password"
               value={formData.password}
               onChange={(e) => {
@@ -234,58 +219,9 @@ const Register = () => {
                 }));
               }}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 hover:text-indigo-600"
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
             {errors.password && (
               <p className="mt-1.5 text-xs text-rose-500">{errors.password}</p>
             )}
-
-            <div className="mt-2 rounded-lg border border-slate-200 bg-white p-3">
-              <div className="mb-2 flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-600">Password strength</span>
-                <span
-                  className={`font-semibold capitalize ${
-                    passwordStrength === "strong"
-                      ? "text-emerald-600"
-                      : passwordStrength === "medium"
-                        ? "text-amber-600"
-                        : "text-rose-500"
-                  }`}
-                >
-                  {passwordStrength}
-                </span>
-              </div>
-              <div className="mb-2 h-2 overflow-hidden rounded-full bg-slate-100">
-                <div
-                  className={`h-full transition-all ${
-                    passwordStrength === "strong"
-                      ? "w-full bg-emerald-500"
-                      : passwordStrength === "medium"
-                        ? "w-2/3 bg-amber-500"
-                        : "w-1/3 bg-rose-500"
-                  }`}
-                />
-              </div>
-              <ul className="space-y-1 text-xs text-slate-500">
-                <li className={passwordChecks.hasMinLength ? "text-emerald-600" : ""}>
-                  At least 8 characters
-                </li>
-                <li className={passwordChecks.hasUppercase ? "text-emerald-600" : ""}>
-                  Contains an uppercase letter
-                </li>
-                <li className={passwordChecks.hasLowercase ? "text-emerald-600" : ""}>
-                  Contains a lowercase letter
-                </li>
-                <li className={passwordChecks.hasNumber ? "text-emerald-600" : ""}>
-                  Contains a number
-                </li>
-              </ul>
-            </div>
           </div>
 
           {/* Invitation Code for Managers */}
@@ -315,7 +251,9 @@ const Register = () => {
                 Required for manager accounts.
               </p>
               {errors.invitationCode && (
-                <p className="mt-1 text-xs text-rose-500">{errors.invitationCode}</p>
+                <p className="mt-1 text-xs text-rose-500">
+                  {errors.invitationCode}
+                </p>
               )}
             </div>
           )}
@@ -350,7 +288,9 @@ const Register = () => {
           <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto mb-4 flex items-center justify-center">
             <Icons.Check />
           </div>
-          <h3 className="text-lg font-bold text-slate-900">Registration Complete</h3>
+          <h3 className="text-lg font-bold text-slate-900">
+            Registration Complete
+          </h3>
           <p className="text-sm text-slate-500 mt-2 mb-5">
             Your account is ready and you are now logged in.
           </p>

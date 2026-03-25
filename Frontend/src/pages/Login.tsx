@@ -22,10 +22,11 @@ const Login = () => {
     email: "",
     password: "",
   });
-  const [selectedRole, setSelectedRole] = useState<"student" | "manager">("student");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {},
+  );
 
   const validateForm = () => {
     const nextErrors: { email?: string; password?: string } = {};
@@ -89,29 +90,6 @@ const Login = () => {
           </div>
           <h1 className="text-3xl font-bold text-slate-800 mb-2">FitFlow</h1>
           <p className="text-slate-500 mb-6">Let's get moving.</p>
-
-          <div className="flex bg-slate-100 p-1 rounded-xl mb-4">
-            <button
-              onClick={() => setSelectedRole("student")}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                selectedRole === "student"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Student
-            </button>
-            <button
-              onClick={() => setSelectedRole("manager")}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                selectedRole === "manager"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Manager
-            </button>
-          </div>
         </div>
 
         <div className="space-y-4">

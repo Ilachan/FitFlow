@@ -21,19 +21,27 @@ describe("Register page", () => {
     expect(screen.getByText("Password is required.")).toBeInTheDocument();
   });
 
-  it("updates password strength indicator as user types", async () => {
+  it("shows password policy error for invalid password", async () => {
     render(
       <MemoryRouter>
         <Register />
       </MemoryRouter>,
     );
 
-    const passwordInput = screen.getByPlaceholderText("Password");
+    await userEvent.type(screen.getByPlaceholderText("Full Name"), "Test User");
+    await userEvent.type(
+      screen.getByPlaceholderText("Email Address"),
+      "test@example.com",
+    );
+    await userEvent.type(screen.getByPlaceholderText("Password"), "abc");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Create Account" }),
+    );
 
-    expect(screen.getByText("weak")).toBeInTheDocument();
-
-    await userEvent.type(passwordInput, "Abcdefg1");
-
-    expect(screen.getByText("strong")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Password must be 8+ chars and include uppercase, lowercase, and a number.",
+      ),
+    ).toBeInTheDocument();
   });
 });
