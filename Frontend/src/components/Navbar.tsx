@@ -1,12 +1,64 @@
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate, Link } from "react-router-dom";
 import { Icons } from "../lib/icons";
 import Button from "./ui/Button";
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
+import { getProfileRequest } from "../lib/api";
+
+const normalizeFromApi = (value: string | undefined) => (value || "").trim();
 
 const Navbar = () => {
-  const { isAuthenticated, logout } = useAuthStore();
+  const { isAuthenticated, logout, token } = useAuthStore();
   const navigate = useNavigate();
+  const [profileName, setProfileName] = useState("");
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState("");
+
+  const avatarFallback = useMemo(() => {
+    const name = profileName.trim() || "User";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=ffffff`;
+  }, [profileName]);
+
+  const avatarPreview = profileAvatarUrl.trim() || avatarFallback;
+
+  const loadNavbarProfile = useCallback(async () => {
+    if (!token) {
+      setProfileName("");
+      setProfileAvatarUrl("");
+      return;
+    }
+
+    try {
+      const data = await getProfileRequest(token);
+      setProfileName(normalizeFromApi(data.name));
+      setProfileAvatarUrl(normalizeFromApi(data.avatar_url));
+    } catch {
+      setProfileName("");
+      setProfileAvatarUrl("");
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setProfileName("");
+      setProfileAvatarUrl("");
+      return;
+    }
+
+    void loadNavbarProfile();
+  }, [isAuthenticated, loadNavbarProfile]);
+
+  useEffect(() => {
+    const handleProfileUpdated = () => {
+      void loadNavbarProfile();
+    };
+
+    window.addEventListener("profile-updated", handleProfileUpdated);
+
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdated);
+    };
+  }, [loadNavbarProfile]);
 
   const handleLogout = () => {
     navigate("/");
@@ -69,8 +121,11 @@ const Navbar = () => {
                   }
                 >
                   <img
-                    src={`https://picsum.photos/id/${1}/200/200`}
+                    src={avatarPreview}
                     alt="Profile"
+                    onError={(event) => {
+                      event.currentTarget.src = avatarFallback;
+                    }}
                     className="w-full h-full object-cover"
                   />
                 </NavLink>

@@ -140,13 +140,13 @@ export type UserProfile = {
 };
 
 export type UpdateUserProfilePayload = {
-  name: string;
-  email: string;
-  avatar_url?: string;
-  date_of_birth?: string;
-  phone_number?: string;
-  address?: string;
-  gender?: string;
+  name?: string;
+  email?: string;
+  avatar_url?: string | null;
+  date_of_birth?: string | null;
+  phone_number?: string | null;
+  address?: string | null;
+  gender?: string | null;
 };
 
 export const getProfileRequest = (token: string) =>

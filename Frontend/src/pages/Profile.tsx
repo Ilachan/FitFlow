@@ -33,6 +33,45 @@ const normalizeGenderFromApi = (value: string | undefined) => {
   return isGenderOption(normalized) ? normalized : "";
 };
 
+const buildProfilePatchPayload = (
+  current: UserProfile,
+  original: UserProfile,
+): UpdateUserProfilePayload => {
+  const payload: UpdateUserProfilePayload = {};
+
+  const currentName = current.name.trim();
+  const originalName = original.name.trim();
+  if (currentName !== originalName) {
+    payload.name = currentName;
+  }
+
+  const currentEmail = current.email.trim();
+  const originalEmail = original.email.trim();
+  if (currentEmail !== originalEmail) {
+    payload.email = currentEmail;
+  }
+
+  const optionalFields: Array<
+    keyof Pick<
+      UpdateUserProfilePayload,
+      "avatar_url" | "date_of_birth" | "phone_number" | "address" | "gender"
+    >
+  > = ["avatar_url", "date_of_birth", "phone_number", "address", "gender"];
+
+  for (const field of optionalFields) {
+    const nextValue = current[field].trim();
+    const prevValue = original[field].trim();
+
+    if (nextValue === prevValue) {
+      continue;
+    }
+
+    payload[field] = nextValue === "" ? null : nextValue;
+  }
+
+  return payload;
+};
+
 type ProfileErrors = {
   name?: string;
   email?: string;
@@ -203,38 +242,17 @@ const Profile = () => {
 
     setLoading(true);
     try {
-      const payload: UpdateUserProfilePayload = {
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-      };
+      const payload = buildProfilePatchPayload(formData, originalData);
 
-      const avatarUrl = formData.avatar_url.trim();
-      if (avatarUrl !== "") {
-        payload.avatar_url = avatarUrl;
-      }
-
-      const dateOfBirth = formData.date_of_birth.trim();
-      if (dateOfBirth !== "") {
-        payload.date_of_birth = dateOfBirth;
-      }
-
-      const phoneNumber = formData.phone_number.trim();
-      if (phoneNumber !== "") {
-        payload.phone_number = phoneNumber;
-      }
-
-      const address = formData.address.trim();
-      if (address !== "") {
-        payload.address = address;
-      }
-
-      const gender = formData.gender.trim();
-      if (gender !== "") {
-        payload.gender = gender;
+      if (Object.keys(payload).length === 0) {
+        toast("No changes to save.", { icon: "ℹ️" });
+        setLoading(false);
+        return;
       }
 
       await updateProfileRequest(token, payload);
       await loadProfile();
+      window.dispatchEvent(new Event("profile-updated"));
       toast.success("Profile saved successfully!");
     } catch (error) {
       const message =
@@ -477,8 +495,13 @@ const Profile = () => {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
+                  disabled
                   placeholder="Enter email"
+                  className=""
                 />
+                <p className="pl-3 text-xs text-red-400">
+                  *Email cannot be changed.
+                </p>
                 {errors.email && (
                   <p className="text-xs text-rose-500">{errors.email}</p>
                 )}
