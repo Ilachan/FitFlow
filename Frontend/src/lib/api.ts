@@ -145,6 +145,27 @@ export const getProfileRequest = (token: string) =>
 export const updateProfileRequest = (token: string, profile: UserProfile) =>
   authRequest<{ message: string }>("/auth/profile", "PUT", token, profile);
 
+export type CreateManagerInviteCodeRequest = {
+  expire_hours: number;
+  invitee_email?: string;
+};
+
+export type CreateManagerInviteCodeResponse = {
+  message: string;
+  code: string;
+};
+
+export const createManagerInviteCodeRequest = (
+  token: string,
+  payload: CreateManagerInviteCodeRequest,
+) =>
+  authRequest<CreateManagerInviteCodeResponse>(
+    "/auth/manager/invite-codes",
+    "POST",
+    token,
+    payload,
+  );
+
 export type BackendClass = {
   id: number;
   name: string;

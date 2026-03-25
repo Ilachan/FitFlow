@@ -5,6 +5,7 @@ import Profile from "./Profile";
 
 const mockGetProfileRequest = vi.fn();
 const mockUpdateProfileRequest = vi.fn();
+const mockCreateManagerInviteCodeRequest = vi.fn();
 
 vi.mock("../store/authStore", () => ({
   useAuthStore: () => ({
@@ -17,6 +18,8 @@ vi.mock("../lib/api", () => ({
   getProfileRequest: (...args: unknown[]) => mockGetProfileRequest(...args),
   updateProfileRequest: (...args: unknown[]) =>
     mockUpdateProfileRequest(...args),
+  createManagerInviteCodeRequest: (...args: unknown[]) =>
+    mockCreateManagerInviteCodeRequest(...args),
 }));
 
 vi.mock("react-hot-toast", () => {

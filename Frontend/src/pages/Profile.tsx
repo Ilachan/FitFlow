@@ -7,6 +7,7 @@ import { Icons } from "../lib/icons";
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
 import {
+  createManagerInviteCodeRequest,
   getProfileRequest,
   updateProfileRequest,
   type UserProfile,
@@ -46,12 +47,15 @@ const initialProfileState: UserProfile = {
 const Profile = () => {
   const { role, token } = useAuthStore();
   const [loading, setLoading] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
+  const [generatingInviteCode, setGeneratingInviteCode] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [showConfirmSave, setShowConfirmSave] = useState(false);
-  const [invitationCode, setInvitationCode] = useState("");
+  const [generatedInviteCode, setGeneratedInviteCode] = useState("");
+  const [inviteeEmail, setInviteeEmail] = useState("");
+  const [expireHours, setExpireHours] = useState("");
   const [formData, setFormData] = useState<UserProfile>(initialProfileState);
-  const [originalData, setOriginalData] = useState<UserProfile>(initialProfileState);
+  const [originalData, setOriginalData] =
+    useState<UserProfile>(initialProfileState);
   const [errors, setErrors] = useState<ProfileErrors>({});
 
   const avatarFallback = useMemo(() => {
@@ -233,23 +237,62 @@ const Profile = () => {
     toast("Changes were discarded.", { icon: "ℹ️" });
   };
 
-  const handleUpgrade = () => {
-    if (upgrading) {
+  const handleGenerateInviteCode = async () => {
+    if (generatingInviteCode || !token) {
       return;
     }
 
-    if (!invitationCode) {
-      toast.error("Please enter an invitation code.");
+    if (!inviteeEmail.trim()) {
+      toast.error("Invitee email is required.");
       return;
     }
 
-    setUpgrading(true);
-    setTimeout(() => {
-      toast("Upgrade endpoint is not available yet. Please contact admin.", {
-        icon: "ℹ️",
+    if (!validateEmail(inviteeEmail)) {
+      toast.error("Please enter a valid invitee email.");
+      return;
+    }
+
+    const expireHoursValue = Number(expireHours);
+    if (
+      !Number.isInteger(expireHoursValue) ||
+      expireHoursValue < 1 ||
+      expireHoursValue > 720
+    ) {
+      toast.error("Expire hours must be an integer between 1 and 720.");
+      return;
+    }
+
+    setGeneratingInviteCode(true);
+    try {
+      const data = await createManagerInviteCodeRequest(token, {
+        invitee_email: inviteeEmail.trim(),
+        expire_hours: expireHoursValue,
       });
-      setUpgrading(false);
-    }, 500);
+      setGeneratedInviteCode(data.code || "");
+      toast.success("Invite code generated successfully.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to generate invite code";
+      toast.error(message);
+    } finally {
+      setGeneratingInviteCode(false);
+    }
+  };
+
+  const handleCopyInviteCode = async () => {
+    if (!generatedInviteCode) {
+      toast.error("Please generate an invite code first.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(generatedInviteCode);
+      toast.success("Invite code copied.");
+    } catch {
+      toast.error("Failed to copy invite code.");
+    }
   };
 
   return (
@@ -308,41 +351,75 @@ const Profile = () => {
             </div>
           </Card>
 
-          {role === "student" && (
+          {role === "supermanager" && (
             <Card className="p-6 space-y-4 border-indigo-100 bg-indigo-50/30">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <span className="w-1 h-6 bg-indigo-500 rounded-full" />
-                Upgrade Account
+                Manager Invite Code
               </h3>
               <p className="text-sm text-slate-500">
-                Become a manager to access advanced features.
+                Generate a manager invitation code and share it securely.
               </p>
               <div className="space-y-3">
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                    <Icons.Mail />
+                  </div>
+                  <Input
+                    placeholder="Invitee email"
+                    value={inviteeEmail}
+                    onChange={(e) => setInviteeEmail(e.target.value)}
+                    className="px-4 py-3 text-sm"
+                  />
+                </div>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors text-xs font-bold">
+                    H
+                  </div>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={720}
+                    placeholder="Expire hours"
+                    value={expireHours}
+                    onChange={(e) => setExpireHours(e.target.value)}
+                    className="pl-4 py-3 text-sm"
+                  />
+                </div>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                     <Icons.Key className="w-4 h-4" />
                   </div>
                   <Input
-                    placeholder="Invitation Code"
-                    value={invitationCode}
-                    onChange={(e) => setInvitationCode(e.target.value)}
-                    className="pl-9 py-2.5 text-sm"
+                    placeholder="Generated invitation code"
+                    value={generatedInviteCode}
+                    readOnly
+                    className="px-4 py-3 text-sm bg-slate-100 cursor-not-allowed"
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={handleUpgrade}
-                  className={`w-full py-2.5 text-sm ${upgrading ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  {upgrading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 border-2 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
-                      Upgrading...
-                    </span>
-                  ) : (
-                    "Upgrade to Manager"
-                  )}
-                </Button>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      void handleGenerateInviteCode();
+                    }}
+                    className={`w-full py-2.5 text-sm ${generatingInviteCode ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    {generatingInviteCode ? "Generating..." : "Generate Code"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      void handleCopyInviteCode();
+                    }}
+                    className="w-full py-2.5 text-sm"
+                  >
+                    Copy Code
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Expire hours must be between 1 and 720.
+                </p>
               </div>
             </Card>
           )}
