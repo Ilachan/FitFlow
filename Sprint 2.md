@@ -4,10 +4,7 @@
 
 ---
 ---
-## 1) Detail Work Completed in Sprint 2
-## 2) Frontend Testing Summary
-## 3) Backend Testing Summary
-## 4) API Documentation
+
 ## 1) Detail Work Completed in Sprint 2
 
 ### 1.1 User Stories & Features
