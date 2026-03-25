@@ -32,9 +32,12 @@ type CalendarEventData = {
   spots: number;
   image: string;
   time: string;
+  start: ReturnType<typeof Temporal.ZonedDateTime.from>;
+  end: ReturnType<typeof Temporal.ZonedDateTime.from>;
+  calendarId: string;
   _isPast?: boolean;
-  _enrolled?: boolean;
   _style?: { bg: string; border: string; text: string };
+  _enrolled?: boolean;
 };
 
 type CalendarEventProps = {
@@ -43,7 +46,8 @@ type CalendarEventProps = {
 
 const CustomEvent = (props: CalendarEventProps) => {
   const event = props.calendarEvent;
-  const spotsColor = event.spots === 0 ? "#ef4444" : event.spots < 5 ? "#f59e0b" : "#10b981";
+  const spotsColor =
+    event.spots === 0 ? "#ef4444" : event.spots < 5 ? "#f59e0b" : "#10b981";
   const colors = event._style || COLOR_STYLES[0];
 
   return (
@@ -153,8 +157,8 @@ const CalendarView = ({
     return pairs;
   }, [today]);
 
-  const events = useMemo(() => {
-    const allEvents: typeof events = [];
+  const events = useMemo((): CalendarEventData[] => {
+    const allEvents: CalendarEventData[] = [];
 
     courses.forEach((course, courseIndex) => {
       const courseDayTrimmed = course.day.trim();

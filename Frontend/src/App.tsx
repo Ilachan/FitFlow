@@ -11,7 +11,15 @@ import AuthGuard from "./components/AuthGuard";
 function App() {
   return (
     <main>
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            marginTop: "50px",
+          },
+        }}
+      />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
