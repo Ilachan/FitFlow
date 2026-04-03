@@ -253,7 +253,13 @@ func seedEnrollments(targetCount int) {
 	}
 
 	toCreate := targetCount - int(existing)
-	statuses := []string{"registered", "registered", "registered", "dropped", "pending"}
+	statuses := []string{
+		model.EnrollmentStatusEnrolled,
+		model.EnrollmentStatusEnrolled,
+		model.EnrollmentStatusAttended,
+		model.EnrollmentStatusMissed,
+		model.EnrollmentStatusEnrolled,
+	}
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	lookbackDays := 35
 
@@ -337,7 +343,7 @@ func ensureAnalyticsCoverageEnrollments(courses []model.Course) error {
 			enrollment = model.Enrollment{
 				UserID:     student.ID,
 				CourseID:   course.ID,
-				Status:     "registered",
+				Status:     model.EnrollmentStatusEnrolled,
 				EnrollTime: enrollTime,
 			}
 			if err := db.DB.Create(&enrollment).Error; err != nil {
@@ -348,7 +354,7 @@ func ensureAnalyticsCoverageEnrollments(courses []model.Course) error {
 		}
 
 		if err := db.DB.Model(&enrollment).Updates(map[string]any{
-			"status":      "registered",
+			"status":      model.EnrollmentStatusEnrolled,
 			"enroll_time": enrollTime,
 		}).Error; err != nil {
 			return err

@@ -127,6 +127,15 @@ func migrateEnrollmentTable() {
 			log.Printf("Failed to rename column student_id to user_id in Enrollment: %v", err)
 		}
 	}
+
+	if DB.Migrator().HasTable("Enrollment") && DB.Migrator().HasColumn("Enrollment", "status") {
+		if err := DB.Exec(`UPDATE Enrollment SET status = 'enrolled' WHERE status IN ('registered', 'pending')`).Error; err != nil {
+			log.Printf("Failed to normalize Enrollment status values: %v", err)
+		}
+		if err := DB.Exec(`DELETE FROM Enrollment WHERE status = 'dropped'`).Error; err != nil {
+			log.Printf("Failed to remove dropped Enrollment rows: %v", err)
+		}
+	}
 }
 
 func ensureUserDailyActivityTable() {

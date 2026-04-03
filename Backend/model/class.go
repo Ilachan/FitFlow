@@ -2,6 +2,12 @@ package model
 
 import "time"
 
+const (
+	EnrollmentStatusEnrolled = "enrolled"
+	EnrollmentStatusAttended = "attended"
+	EnrollmentStatusMissed   = "missed"
+)
+
 // Course represents the Course table in SQLite.
 type Course struct {
 	ID uint `gorm:"primaryKey;autoIncrement;column:id" json:"id"`

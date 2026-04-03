@@ -52,6 +52,19 @@ func main() {
 		}
 	}
 
+	if hasTable(db, "Enrollment") && hasColumn(db, "Enrollment", "status") {
+		if err := db.Exec(`UPDATE Enrollment SET status = 'enrolled' WHERE status IN ('registered', 'pending')`).Error; err != nil {
+			fmt.Printf("normalize statuses failed: %v\n", err)
+		} else {
+			fmt.Println("normalized enrollment statuses to enrolled/attended/missed")
+		}
+		if err := db.Exec(`DELETE FROM Enrollment WHERE status = 'dropped'`).Error; err != nil {
+			fmt.Printf("remove dropped rows failed: %v\n", err)
+		} else {
+			fmt.Println("removed dropped enrollment rows")
+		}
+	}
+
 	var tables []tableRow
 	db.Raw("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").Scan(&tables)
 	fmt.Println("tables:")

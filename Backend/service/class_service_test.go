@@ -153,7 +153,7 @@ func TestRegisterClass_AlreadyExists(t *testing.T) {
 
 	user := seedRoleAndUser(t, 1)
 	course := seedCourse(t, "Spin", 5, "Cardio")
-	seedEnrollmentAt(t, user.ID, course.ID, "registered", time.Now())
+	seedEnrollmentAt(t, user.ID, course.ID, model.EnrollmentStatusEnrolled, time.Now())
 
 	err := RegisterClass(user.ID, course.ID)
 	if err == nil || err.Error() != "enrollment already exists" {
@@ -167,7 +167,7 @@ func TestRegisterClass_ClassFull(t *testing.T) {
 	user1 := seedRoleAndUser(t, 1)
 	user2 := seedRoleAndUser(t, 2)
 	course := seedCourse(t, "Boxing", 1, "Combat")
-	seedEnrollmentAt(t, user1.ID, course.ID, "registered", time.Now())
+	seedEnrollmentAt(t, user1.ID, course.ID, model.EnrollmentStatusEnrolled, time.Now())
 
 	err := RegisterClass(user2.ID, course.ID)
 	if err == nil || err.Error() != "class is full" {
@@ -180,7 +180,7 @@ func TestDropClass_Success(t *testing.T) {
 
 	user := seedRoleAndUser(t, 1)
 	course := seedCourse(t, "HIIT", 4, "Cardio")
-	seedEnrollmentAt(t, user.ID, course.ID, "registered", time.Now())
+	seedEnrollmentAt(t, user.ID, course.ID, model.EnrollmentStatusEnrolled, time.Now())
 
 	if err := DropClass(user.ID, course.ID); err != nil {
 		t.Fatalf("expected success, got error: %v", err)
@@ -194,6 +194,16 @@ func TestDropClass_Success(t *testing.T) {
 	}
 	if enrollments != 0 {
 		t.Fatalf("expected 0 enrollments, got %d", enrollments)
+	}
+
+	var activities int64
+	if err := db.DB.Model(&model.UserDailyActivity{}).
+		Where("user_id = ? AND course_id = ?", user.ID, course.ID).
+		Count(&activities).Error; err != nil {
+		t.Fatalf("failed to verify activity deletion: %v", err)
+	}
+	if activities != 0 {
+		t.Fatalf("expected 0 daily activity rows, got %d", activities)
 	}
 }
 
@@ -214,8 +224,8 @@ func TestListClassesPaged_ReturnsSpotAndPagination(t *testing.T) {
 	courseA := seedCourse(t, "Course A", 3, "Cardio")
 	courseB := seedCourse(t, "Course B", 2, "Strength")
 
-	seedEnrollmentAt(t, user1.ID, courseA.ID, "registered", time.Now())
-	seedEnrollmentAt(t, user2.ID, courseA.ID, "registered", time.Now())
+	seedEnrollmentAt(t, user1.ID, courseA.ID, model.EnrollmentStatusEnrolled, time.Now())
+	seedEnrollmentAt(t, user2.ID, courseA.ID, model.EnrollmentStatusAttended, time.Now())
 
 	classes, total, err := ListClassesPaged(1, 10)
 	if err != nil {
@@ -259,9 +269,9 @@ func TestGetUserAnalytics_SuccessWithPercentages(t *testing.T) {
 	}
 
 	now := time.Now()
-	seedEnrollmentAt(t, user.ID, courseCardio1.ID, "registered", now.AddDate(0, 0, -1))
-	seedEnrollmentAt(t, user.ID, courseCardio2.ID, "registered", now.AddDate(0, 0, -2))
-	seedEnrollmentAt(t, user.ID, courseNoCategory.ID, "registered", now.AddDate(0, 0, -3))
+	seedEnrollmentAt(t, user.ID, courseCardio1.ID, model.EnrollmentStatusAttended, now.AddDate(0, 0, -1))
+	seedEnrollmentAt(t, user.ID, courseCardio2.ID, model.EnrollmentStatusAttended, now.AddDate(0, 0, -2))
+	seedEnrollmentAt(t, user.ID, courseNoCategory.ID, model.EnrollmentStatusMissed, now.AddDate(0, 0, -3))
 
 	analytics, err := GetUserAnalytics(user.ID, "7d")
 	if err != nil {

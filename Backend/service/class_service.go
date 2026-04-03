@@ -38,7 +38,7 @@ func RegisterClass(userID uint, courseID uint) error {
 	enrollment := model.Enrollment{
 		UserID:   userID,
 		CourseID: courseID,
-		Status:   "registered",
+		Status:   model.EnrollmentStatusEnrolled,
 	}
 	if err := dao.CreateEnrollment(&enrollment); err != nil {
 		return err
@@ -53,7 +53,7 @@ func DropClass(userID uint, courseID uint) error {
 		return err
 	}
 
-	return dao.BackfillUserDailyActivityFromEnrollments(userID)
+	return nil
 }
 
 // ListClassEnrollments returns all enrollments for a course.

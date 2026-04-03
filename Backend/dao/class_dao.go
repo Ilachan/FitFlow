@@ -7,6 +7,7 @@ import (
 	"my-course-backend/db"
 	"my-course-backend/model"
 
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -68,7 +69,7 @@ func CheckEnrollmentExists(userID uint, courseID uint) (bool, error) {
 func CountEnrollmentsByClass(courseID uint) (int64, error) {
 	var count int64
 	if err := db.DB.Model(&model.Enrollment{}).
-		Where("course_id = ? AND status = ?", courseID, "registered").
+		Where("course_id = ?", courseID).
 		Count(&count).Error; err != nil {
 		return 0, err
 	}
@@ -82,15 +83,23 @@ func CreateEnrollment(enrollment *model.Enrollment) error {
 
 // DeleteEnrollment removes a user enrollment by user and course IDs.
 func DeleteEnrollment(userID uint, courseID uint) error {
-	result := db.DB.Where("user_id = ? AND course_id = ?", userID, courseID).
-		Delete(&model.Enrollment{})
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return errors.New("enrollment not found")
-	}
-	return nil
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		result := tx.Where("user_id = ? AND course_id = ?", userID, courseID).
+			Delete(&model.Enrollment{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return errors.New("enrollment not found")
+		}
+
+		if err := tx.Where("user_id = ? AND course_id = ?", userID, courseID).
+			Delete(&model.UserDailyActivity{}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 // ListEnrollmentsByClass returns enrollments for a course with user info.
@@ -109,7 +118,7 @@ func ListEnrolledCoursesByUser(userID uint) ([]model.Course, error) {
 	var courses []model.Course
 	if err := db.DB.Joins("INNER JOIN Enrollment ON Enrollment.course_id = Course.id").
 		Joins("INNER JOIN User ON User.id = Enrollment.user_id").
-		Where("User.id = ? AND Enrollment.status = ?", userID, "registered").
+		Where("User.id = ?", userID).
 		Order("Course.start_time ASC").
 		Find(&courses).Error; err != nil {
 		return nil, err
