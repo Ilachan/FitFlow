@@ -68,7 +68,7 @@ func CheckEnrollmentExists(userID uint, courseID uint) (bool, error) {
 func CountEnrollmentsByClass(courseID uint) (int64, error) {
 	var count int64
 	if err := db.DB.Model(&model.Enrollment{}).
-		Where("course_id = ? AND status = ?", courseID, "registered").
+		Where("course_id = ? AND status = ?", courseID, "enrolled").
 		Count(&count).Error; err != nil {
 		return 0, err
 	}
@@ -109,7 +109,7 @@ func ListEnrolledCoursesByUser(userID uint) ([]model.Course, error) {
 	var courses []model.Course
 	if err := db.DB.Joins("INNER JOIN Enrollment ON Enrollment.course_id = Course.id").
 		Joins("INNER JOIN User ON User.id = Enrollment.user_id").
-		Where("User.id = ? AND Enrollment.status = ?", userID, "registered").
+		Where("User.id = ? AND Enrollment.status = ?", userID, "enrolled").
 		Order("Course.start_time ASC").
 		Find(&courses).Error; err != nil {
 		return nil, err
@@ -228,4 +228,24 @@ func GetUserCategoryActivitySummary(userID uint, fromDate time.Time, toDate time
 	}
 
 	return categories, nil
+}
+
+func GetEnrollment(userID uint, courseID uint) (*model.Enrollment, error) {
+	var enrollment model.Enrollment
+	if err := db.DB.Where("user_id = ? AND course_id = ?", userID, courseID).
+		First(&enrollment).Error; err != nil {
+		return nil, err
+	}
+	return &enrollment, nil
+}
+
+func UpdateEnrollmentStatus(userID uint, courseID uint, status string) (bool, error) {
+	tx := db.DB.Model(&model.Enrollment{}).
+		Where("user_id = ? AND course_id = ?", userID, courseID).
+		Update("status", status)
+
+	if tx.Error != nil {
+		return false, tx.Error
+	}
+	return tx.RowsAffected > 0, nil
 }

@@ -193,7 +193,7 @@ func TestRegisterClassEndpoint_Conflict(t *testing.T) {
 	seedRouteRole(t, 1, "Student")
 	user := seedRouteUser(t, 1, "secret123")
 	course := seedRouteCourse(t, "Spin", 3, "Cardio")
-	seedRouteEnrollmentAt(t, user.ID, course.ID, "registered", time.Now())
+	seedRouteEnrollmentAt(t, user.ID, course.ID, "enrolled", time.Now())
 	token := issueRouteToken(t, user.Email, "secret123")
 	router := routes.SetupRouter()
 
@@ -218,7 +218,7 @@ func TestDropClassEndpoint_OK(t *testing.T) {
 	seedRouteRole(t, 1, "Student")
 	user := seedRouteUser(t, 1, "secret123")
 	course := seedRouteCourse(t, "HIIT", 4, "Cardio")
-	seedRouteEnrollmentAt(t, user.ID, course.ID, "registered", time.Now())
+	seedRouteEnrollmentAt(t, user.ID, course.ID, "enrolled", time.Now())
 	token := issueRouteToken(t, user.Email, "secret123")
 	router := routes.SetupRouter()
 
@@ -268,7 +268,7 @@ func TestListClassesEndpoint_OK(t *testing.T) {
 	user := seedRouteUser(t, 1, "secret123")
 	courseA := seedRouteCourse(t, "Course A", 3, "Cardio")
 	courseB := seedRouteCourse(t, "Course B", 2, "Strength")
-	seedRouteEnrollmentAt(t, user.ID, courseA.ID, "registered", time.Now())
+	seedRouteEnrollmentAt(t, user.ID, courseA.ID, "enrolled", time.Now())
 	router := routes.SetupRouter()
 
 	recorder := performJSONRequest(t, router, http.MethodGet, "/classes?page=1", "", nil)
@@ -325,8 +325,8 @@ func TestGetUserAnalyticsEndpoint_OK(t *testing.T) {
 		t.Fatalf("failed to set courseB duration: %v", err)
 	}
 	now := time.Now()
-	seedRouteEnrollmentAt(t, user.ID, courseA.ID, "registered", now.AddDate(0, 0, -1))
-	seedRouteEnrollmentAt(t, user.ID, courseB.ID, "registered", now.AddDate(0, 0, -2))
+	seedRouteEnrollmentAt(t, user.ID, courseA.ID, "enrolled", now.AddDate(0, 0, -1))
+	seedRouteEnrollmentAt(t, user.ID, courseB.ID, "enrolled", now.AddDate(0, 0, -2))
 	token := issueRouteToken(t, user.Email, "secret123")
 	router := routes.SetupRouter()
 

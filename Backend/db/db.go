@@ -24,6 +24,7 @@ func InitDB() {
 	DB.Exec("PRAGMA foreign_keys = ON;")
 	migrateUserInfoTable()
 	migrateEnrollmentTable()
+	migrateCourseInstructorColumn()
 	ensureUserDailyActivityTable()
 	// Normalize TIME values to HH:MM:SS for consistent scanning.
 	if DB.Migrator().HasTable("Course") {
@@ -155,4 +156,16 @@ func ensureUserDailyActivityTable() {
 	if err := DB.Exec(query).Error; err != nil {
 		log.Printf("Failed to ensure UserDailyActivity table exists: %v", err)
 	}
+}
+
+func migrateCourseInstructorColumn() {
+    if DB == nil {
+        return
+    }
+
+    if DB.Migrator().HasTable("Course") && !DB.Migrator().HasColumn("Course", "instructor_id") {
+        if err := DB.Exec(`ALTER TABLE "Course" ADD COLUMN instructor_id INTEGER;`).Error; err != nil {
+            log.Printf("Failed to add instructor_id to Course: %v", err)
+        }
+    }
 }
