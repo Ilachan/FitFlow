@@ -38,6 +38,8 @@ func SetupRouter() *gin.Engine {
 		// New Profile Endpoints
 		authRoutes.GET("/profile", api.GetProfile)
 		authRoutes.PUT("/profile", api.UpdateProfile)
+
+		authRoutes.POST("/roles/assign", api.AssignUserRole)
 	}
 	// User Route Group
 	// Prefix: /users
@@ -73,8 +75,23 @@ func SetupRouter() *gin.Engine {
 		classRoutes.DELETE("/:id", api.ManagerDeleteClass)
 	}
 
-	// Note: Future Course Route Group can be added here...
-	// courseRoutes := r.Group("/courses") { ... }
+	instructorRoutes := r.Group("/instructor")
+	{
+		instructorRoutes.GET("/courses", api.InstructorListCourses)
+		instructorRoutes.GET("/courses/:id/enrollments", api.InstructorListCourseEnrollments)
+		instructorRoutes.PATCH("/courses/:id/enrollments", api.InstructorUpdateEnrollmentStatus)
+	}
+
+		// ✅ Manager Route Group
+	// Prefix: /manager
+	managerRoutes := r.Group("/manager")
+	{
+		managerRoutes.GET("/users", api.ManagerListUsers)
+		managerRoutes.GET("/users/:id/enrollments", api.ManagerListUserEnrollments)
+		managerRoutes.POST("/users/:id/enrollments", api.ManagerAddUserEnrollment)
+		managerRoutes.DELETE("/users/:id/enrollments/:course_id", api.ManagerDeleteUserEnrollment)
+	}
+
 
 	return r
 }

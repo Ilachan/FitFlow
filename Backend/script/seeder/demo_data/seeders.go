@@ -17,7 +17,7 @@ import (
 
 // seedRoles ensures default roles exist in the database.
 func seedRoles() {
-	roles := []string{"Admin", "Teacher", "Student"}
+	roles := []string{"Student", "SuperManager", "Manager", "Instructor"}
 	for _, roleName := range roles {
 		var role model.Role
 		err := db.DB.Where("role_name = ?", roleName).First(&role).Error
@@ -37,6 +37,10 @@ func seedRoles() {
 }
 
 // seedUsers creates fake users by role up to the provided targets.
+// NOTE: 为了不改 main.go 的调用参数：
+// adminTarget -> SuperManager 数量
+// teacherTarget -> Manager 数量
+// studentTarget -> Student 数量
 func seedUsers(adminTarget int, teacherTarget int, studentTarget int) {
 	if adminTarget < 0 || teacherTarget < 0 || studentTarget < 0 {
 		return
@@ -48,9 +52,10 @@ func seedUsers(adminTarget int, teacherTarget int, studentTarget int) {
 	}
 
 	roles := []roleTarget{
-		{name: "Admin", target: adminTarget},
-		{name: "Teacher", target: teacherTarget},
+		{name: "SuperManager", target: adminTarget},
+		{name: "Manager", target: teacherTarget},
 		{name: "Student", target: studentTarget},
+		{name: "Instructor", target: 0}, // 如需种子，改成你想要的数量
 	}
 
 	defaultPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
@@ -253,7 +258,7 @@ func seedEnrollments(targetCount int) {
 	}
 
 	toCreate := targetCount - int(existing)
-	statuses := []string{"registered", "registered", "registered", "dropped", "pending"}
+	statuses := []string{"enrolled", "attended", "missed"}
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	lookbackDays := 35
 
@@ -337,7 +342,7 @@ func ensureAnalyticsCoverageEnrollments(courses []model.Course) error {
 			enrollment = model.Enrollment{
 				UserID:     student.ID,
 				CourseID:   course.ID,
-				Status:     "registered",
+				Status:     "enrolled",
 				EnrollTime: enrollTime,
 			}
 			if err := db.DB.Create(&enrollment).Error; err != nil {
@@ -348,7 +353,7 @@ func ensureAnalyticsCoverageEnrollments(courses []model.Course) error {
 		}
 
 		if err := db.DB.Model(&enrollment).Updates(map[string]any{
-			"status":      "registered",
+			"status":      "enrolled",
 			"enroll_time": enrollTime,
 		}).Error; err != nil {
 			return err

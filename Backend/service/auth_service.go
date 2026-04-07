@@ -157,3 +157,16 @@ func LoginUserWithRole(input model.LoginInput) (string, uint, error) {
 
 	return tokenString, user.RoleID, nil
 }
+
+func AssignUserRole(userID uint, roleName string) error {
+	roleID, err := dao.GetRoleByName(roleName)
+	if err != nil {
+		return errors.New("role not found")
+	}
+
+	if _, err := dao.GetUserByID(userID); err != nil {
+		return errors.New("user not found")
+	}
+
+	return dao.UpdateUserRoleByID(userID, roleID)
+}

@@ -250,3 +250,9 @@ func DeleteUserByID(id uint) error {
 
 	return nil
 }
+
+func UpdateUserRoleByID(userID uint, roleID uint) error {
+    return db.DB.Model(&model.User{}).
+        Where("id = ?", userID).
+        Update("role_id", roleID).Error
+}
