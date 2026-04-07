@@ -1,6 +1,6 @@
 
 
-# ✅ 1) Course Registration (this endpoint already existed; only the name was slightly changed, no functional impact)
+# ✅ 1) Course Registration (this API already existed before; only the name was slightly changed, no functional impact)
 **Endpoint**: `POST /classes/register`  
 **Function**: Student registers for a course, **writes status as enrolled** (replaces original registered)
 
