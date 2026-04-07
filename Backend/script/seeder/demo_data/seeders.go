@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // seedRoles ensures default roles exist in the database.
@@ -302,6 +303,34 @@ func seedEnrollments(targetCount int) {
 	log.Printf("Seeded Enrollment: created %d fake rows", created)
 }
 
+// backfillEnrollmentSessionIDs links enrollments to a matching class session when the enrollment date exists.
+func backfillEnrollmentSessionIDs() {
+	result := db.DB.Exec(`
+		UPDATE Enrollment
+		SET session_id = (
+			SELECT cs.id
+			FROM ClassSession cs
+			WHERE cs.course_id = Enrollment.course_id
+			  AND cs.session_date <= DATE(Enrollment.enroll_time)
+			ORDER BY cs.session_date DESC, cs.id DESC
+			LIMIT 1
+		)
+		WHERE session_id IS NULL
+		  AND EXISTS (
+			SELECT 1
+			FROM ClassSession cs
+			WHERE cs.course_id = Enrollment.course_id
+			  AND cs.session_date <= DATE(Enrollment.enroll_time)
+		  )
+	`)
+	if result.Error != nil {
+		log.Printf("Enrollment session backfill warning: failed to update session_id values (%v)", result.Error)
+		return
+	}
+
+	log.Printf("Enrollment session backfill: linked %d rows to ClassSession records", result.RowsAffected)
+}
+
 // ensureAnalyticsCoverageEnrollments guarantees one student has rows across 7d and 1m windows.
 func ensureAnalyticsCoverageEnrollments(courses []model.Course) error {
 	var student model.User
@@ -366,7 +395,7 @@ func ensureAnalyticsCoverageEnrollments(courses []model.Course) error {
 	return nil
 }
 
-// seedClassSessions generates ClassSession rows for all existing courses for 12 weeks ahead.
+// seedClassSessions generates completed sessions for the last 30 days and scheduled sessions for the next 12 weeks.
 func seedClassSessions() {
 	var courses []model.Course
 	if err := db.DB.Find(&courses).Error; err != nil {
@@ -379,21 +408,9 @@ func seedClassSessions() {
 		return
 	}
 
-	// Check if sessions already exist
-	var existingCount int64
-	if err := db.DB.Model(&model.ClassSession{}).Count(&existingCount).Error; err != nil {
-		log.Printf("Skip ClassSession seed: failed to count existing sessions (%v)", err)
-		return
-	}
-
-	if existingCount > 0 {
-		log.Printf("ClassSession seed skipped: already has %d sessions", existingCount)
-		return
-	}
-
-	// Generate sessions for each course
 	today := time.Now().UTC()
 	today = time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
+	completedWindowStart := today.AddDate(0, 0, -30)
 
 	created := 0
 	for _, course := range courses {
@@ -403,6 +420,31 @@ func seedClassSessions() {
 
 		// Find first occurrence of the target weekday
 		targetWeekday := normalizeWeekdayForSeed(course.Weekday)
+		if targetWeekday == "" {
+			continue
+		}
+
+		// Seed completed sessions in the last 30 days so analytics and history have data.
+		for sessionDate := getPreviousWeekday(today, targetWeekday); !sessionDate.Before(completedWindowStart); sessionDate = sessionDate.AddDate(0, 0, -7) {
+			session := &model.ClassSession{
+				CourseID:    course.ID,
+				SessionDate: sessionDate.Format("2006-01-02"),
+				StartAt:     combineDateTimeForSeed(sessionDate, course.StartTime),
+				EndAt:       combineDateTimeForSeed(sessionDate, course.EndTime),
+				Status:      "completed",
+				Capacity:    course.Capacity,
+			}
+
+			result := db.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(session)
+			if result.Error != nil {
+				log.Printf("ClassSession seed warning: failed to create completed session for course %d (%v)", course.ID, result.Error)
+				continue
+			}
+			if result.RowsAffected > 0 {
+				created++
+			}
+		}
+
 		firstSessionDate := getNextWeekday(today, targetWeekday)
 
 		// Generate 12 weeks of sessions
@@ -420,15 +462,45 @@ func seedClassSessions() {
 				Capacity:    course.Capacity,
 			}
 
-			if err := db.DB.Create(session).Error; err != nil {
-				log.Printf("ClassSession seed warning: failed to create session for course %d (%v)", course.ID, err)
+			result := db.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(session)
+			if result.Error != nil {
+				log.Printf("ClassSession seed warning: failed to create session for course %d (%v)", course.ID, result.Error)
 				continue
 			}
-			created++
+			if result.RowsAffected > 0 {
+				created++
+			}
 		}
 	}
 
 	log.Printf("Seeded ClassSession: created %d sessions", created)
+}
+
+func getPreviousWeekday(fromDate time.Time, targetWeekday string) time.Time {
+	weekdayMap := map[string]string{
+		"mon": "Monday",
+		"tue": "Tuesday",
+		"wed": "Wednesday",
+		"thu": "Thursday",
+		"fri": "Friday",
+		"sat": "Saturday",
+		"sun": "Sunday",
+	}
+
+	targetDayName, ok := weekdayMap[targetWeekday]
+	if !ok {
+		return fromDate
+	}
+
+	current := fromDate.AddDate(0, 0, -1)
+	for i := 0; i < 7; i++ {
+		if current.Weekday().String() == targetDayName {
+			return current
+		}
+		current = current.AddDate(0, 0, -1)
+	}
+
+	return fromDate.AddDate(0, 0, -7)
 }
 
 func normalizeWeekdayForSeed(weekday string) string {

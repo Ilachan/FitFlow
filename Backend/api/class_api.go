@@ -29,7 +29,7 @@ func RegisterClass(c *gin.Context) {
 		switch err.Error() {
 		case "user not found", "class not found":
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		case "enrollment already exists", "class is full", "class schedule overlaps with an existing enrolled class", "registration closed: class has already started", "registration not yet open: enrollment opens 25 hours before class start", "invalid class schedule":
+		case "enrollment already exists", "class is full", "class schedule overlaps with an existing enrolled class", "registration closed: class has already started", "enrollment opens 25 hours before class start.", "invalid class schedule":
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -37,4 +37,5 @@ func main() {
 	seedCourses(12)
 	seedClassSessions()
 	seedEnrollments(420)
+	backfillEnrollmentSessionIDs()
 }

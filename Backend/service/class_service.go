@@ -141,7 +141,7 @@ func validateEnrollmentWindow(class *model.Course, now time.Time) error {
 
 	enrollmentOpen := nextStart.Add(-25 * time.Hour)
 	if now.Before(enrollmentOpen) {
-		return errors.New("registration not yet open: enrollment opens 25 hours before class start")
+		return errors.New("enrollment opens 25 hours before class start.")
 	}
 
 	return nil
