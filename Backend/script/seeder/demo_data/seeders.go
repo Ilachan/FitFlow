@@ -372,7 +372,7 @@ func ensureAnalyticsCoverageEnrollments(courses []model.Course) error {
 			enrollment = model.Enrollment{
 				UserID:     student.ID,
 				CourseID:   course.ID,
-				Status:     model.EnrollmentStatusEnrolled,
+					Status:     model.EnrollmentStatusAttended,
 				EnrollTime: enrollTime,
 			}
 			if err := db.DB.Create(&enrollment).Error; err != nil {
@@ -383,7 +383,7 @@ func ensureAnalyticsCoverageEnrollments(courses []model.Course) error {
 		}
 
 		if err := db.DB.Model(&enrollment).Updates(map[string]any{
-			"status":      model.EnrollmentStatusEnrolled,
+				"status":      model.EnrollmentStatusAttended,
 			"enroll_time": enrollTime,
 		}).Error; err != nil {
 			return err

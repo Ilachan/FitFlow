@@ -92,7 +92,28 @@ func seedCourse(t *testing.T, name string, capacity int, category string) model.
 		t.Fatalf("failed to seed course: %v", err)
 	}
 
+	seedCourseSession(t, course)
+
 	return course
+}
+
+func seedCourseSession(t *testing.T, course model.Course) model.ClassSession {
+	t.Helper()
+
+	sessionDate := time.Now().AddDate(0, 0, 1)
+	session := model.ClassSession{
+		CourseID:    course.ID,
+		SessionDate: sessionDate.Format("2006-01-02"),
+		StartAt:     time.Date(sessionDate.Year(), sessionDate.Month(), sessionDate.Day(), course.StartTime.Hour(), course.StartTime.Minute(), 0, 0, sessionDate.Location()),
+		EndAt:       time.Date(sessionDate.Year(), sessionDate.Month(), sessionDate.Day(), course.EndTime.Hour(), course.EndTime.Minute(), 0, 0, sessionDate.Location()),
+		Status:      "scheduled",
+		Capacity:    course.Capacity,
+	}
+	if err := db.DB.Create(&session).Error; err != nil {
+		t.Fatalf("failed to seed class session: %v", err)
+	}
+
+	return session
 }
 
 func setCourseSchedule(t *testing.T, courseID uint, weekday string, start string, end string) {
@@ -120,9 +141,15 @@ func setCourseSchedule(t *testing.T, courseID uint, weekday string, start string
 func seedEnrollmentAt(t *testing.T, userID uint, courseID uint, status string, enrollTime time.Time) model.Enrollment {
 	t.Helper()
 
+	var session model.ClassSession
+	if err := db.DB.Where("course_id = ? AND status = ?", courseID, "scheduled").Order("session_date ASC").First(&session).Error; err != nil {
+		t.Fatalf("failed to find scheduled session: %v", err)
+	}
+
 	enrollment := model.Enrollment{
 		UserID:     userID,
 		CourseID:   courseID,
+		SessionID:  &session.ID,
 		Status:     status,
 		EnrollTime: enrollTime,
 	}

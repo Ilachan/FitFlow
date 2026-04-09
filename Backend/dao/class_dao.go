@@ -82,9 +82,9 @@ func GetNextScheduledSession(courseID uint) (*model.ClassSession, error) {
 func CountEnrollmentsByClass(courseID uint) (int64, error) {
 	var count int64
 	if err := db.DB.Model(&model.Enrollment{}).
-		Where(`course_id = ? AND status = ? AND session_id IN (
+		Where(`course_id = ? AND session_id IN (
 			SELECT id FROM ClassSession WHERE course_id = ? AND status = 'scheduled' ORDER BY session_date ASC LIMIT 1
-		)`, courseID, "enrolled", courseID).
+		)`, courseID, courseID).
 		Count(&count).Error; err != nil {
 		return 0, err
 	}
@@ -100,7 +100,7 @@ func CreateEnrollment(enrollment *model.Enrollment) error {
 func DeleteEnrollment(userID uint, courseID uint) error {
 	result := db.DB.Where(`user_id = ? AND course_id = ? AND session_id IN (
 		SELECT id FROM ClassSession WHERE course_id = ? AND status = 'scheduled' ORDER BY session_date ASC LIMIT 1
-	)`, userID, courseID, courseID).
+	) AND status = 'enrolled'`, userID, courseID, courseID).
 		Delete(&model.Enrollment{})
 	if result.Error != nil {
 		return result.Error
@@ -162,6 +162,7 @@ func BackfillUserDailyActivityFromEnrollments(userID uint) error {
 		SELECT e.id, e.user_id, e.course_id, DATE(e.enroll_time), CURRENT_TIMESTAMP
 		FROM Enrollment e
 		WHERE e.user_id = ?
+		AND e.status = 'attended'
 		AND NOT EXISTS (
 			SELECT 1
 			FROM UserDailyActivity uda
