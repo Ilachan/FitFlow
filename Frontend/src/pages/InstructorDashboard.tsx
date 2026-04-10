@@ -253,12 +253,19 @@ const InstructorDashboard = () => {
               <Card
                 key={cls.id}
                 onClick={() => setSelectedClassId(cls.id)}
-                className={`p-4 cursor-pointer transition-all border-2 ${
+                className={`group relative overflow-hidden p-4 cursor-pointer transition-all border-2 ${
                   selectedClassId === cls.id
-                    ? "border-indigo-500 ring-4 ring-indigo-50 shadow-md"
+                    ? "border-indigo-500 ring-4 ring-indigo-50 shadow-md bg-indigo-50/30"
                     : "border-transparent hover:border-slate-200"
                 }`}
               >
+                <span
+                  className={`absolute left-0 top-0 h-full w-1 transition-colors ${
+                    selectedClassId === cls.id
+                      ? "bg-indigo-500"
+                      : "bg-transparent group-hover:bg-slate-200"
+                  }`}
+                />
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-slate-800">{cls.name}</h3>
                   {cls.status === "active" && (
@@ -287,9 +294,15 @@ const InstructorDashboard = () => {
                   >
                     {cls.status.charAt(0).toUpperCase() + cls.status.slice(1)}
                   </Badge>
-                  <Icons.ChevronRight
-                    className={`w-4 h-4 transition-transform ${selectedClassId === cls.id ? "rotate-90 text-indigo-500" : "text-slate-300"}`}
-                  />
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-full border transition-all ${
+                      selectedClassId === cls.id
+                        ? "border-indigo-200 bg-indigo-100 text-indigo-600 shadow-sm"
+                        : "border-slate-200 bg-white text-slate-400"
+                    }`}
+                  >
+                    <Icons.ChevronRight className="w-4 h-4" />
+                  </span>
                 </div>
               </Card>
             ))}
@@ -311,19 +324,23 @@ const InstructorDashboard = () => {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="ghost" onClick={markAllPresent}>
+                      <Button
+                        variant="secondary"
+                        onClick={markAllPresent}
+                        className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                      >
                         Mark All Present
                       </Button>
                       <Button
-                        variant="secondary"
-                        className="bg-slate-800 text-white hover:bg-slate-900 border-none"
+                        variant="primary"
+                        className="bg-slate-900 text-white shadow-md shadow-slate-200 hover:bg-slate-800 hover:shadow-slate-300"
                         onClick={() => setIsAddModalOpen(true)}
                       >
                         <Icons.Plus className="w-4 h-4 mr-2" />
                         Add Walk-in
                       </Button>
                       <Button
-                        className="bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100"
+                        className="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-lg shadow-indigo-200 hover:from-indigo-500 hover:to-cyan-500"
                         onClick={handleSubmitAttendance}
                       >
                         Submit Attendance
