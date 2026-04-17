@@ -88,6 +88,8 @@ const WEEKDAY_TO_INDEX: Record<string, number> = {
   sat: 6,
 };
 
+const LONG_COUNTDOWN_THRESHOLD_HOURS = 30;
+
 const formatDuration = (totalMinutes: number) => {
   if (!Number.isFinite(totalMinutes) || totalMinutes < 0) {
     return "";
@@ -163,6 +165,16 @@ const getEnrollmentWindow = (course: CourseCardItem, now = new Date()) => {
     const diffMs = opensAt.getTime() - now.getTime();
     const hours = Math.floor(diffMs / (60 * 60 * 1000));
     const minutes = Math.floor((diffMs % (60 * 60 * 1000)) / (60 * 1000));
+
+    if (hours > LONG_COUNTDOWN_THRESHOLD_HOURS) {
+      return {
+        canBook: false,
+        message: "Enrollment is not open yet.",
+        countdown: "",
+        opensAt,
+      };
+    }
+
     return {
       canBook: false,
       message: `Enrollment opens in ${hours}h ${minutes}m.`,
@@ -786,7 +798,7 @@ const Browse = () => {
                           : !windowState.canBook
                             ? windowState.countdown
                               ? `Opens in ${windowState.countdown}`
-                              : "Locked"
+                              : "Not open yet"
                             : course.spots === 0
                               ? "Join Waitlist"
                               : "Book"}
